@@ -1,0 +1,2976 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ukeplan – Admin</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Admin-spesifikk styling */
+
+/* Skolenavn i topbar */
+.school-name-display {
+  font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.7);
+  cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 4px;
+  transition: all 0.15s; border: 1px solid transparent; max-width: 250px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.school-name-display:hover { background: rgba(255,255,255,0.12); color: white; border-color: rgba(255,255,255,0.2); }
+.school-name-display.empty { font-style: italic; opacity: 0.5; }
+.school-name-edit {
+  font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 600;
+  padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.15); color: white; outline: none; width: 200px;
+}
+.school-name-edit::placeholder { color: rgba(255,255,255,0.4); }
+
+/* Kollapsbar seksjon */
+.collapsible-section {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 0.75rem; overflow: hidden;
+}
+.collapsible-head {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem 1rem;
+  cursor: pointer; user-select: none; transition: background 0.15s;
+}
+.collapsible-head:hover { background: #faf9f7; }
+.collapsible-head h3 { font-size: 0.88rem; font-weight: 700; margin: 0; flex: 1; }
+.collapsible-chev { color: var(--muted); transition: transform 0.25s; font-size: 0.8rem; }
+.collapsible-section.open .collapsible-chev { transform: rotate(180deg); }
+.collapsible-body { display: none; padding: 0 1rem 1rem; border-top: 1px solid var(--border-lt); }
+.collapsible-section.open .collapsible-body { display: block; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.add-row { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.add-input {
+  flex: 1; min-width: 160px; padding: 0.55rem 0.75rem;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; font-size: 0.9rem; background: #fafaf8;
+}
+.add-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background: white; }
+.add-input::placeholder { color: #a0aec0; }
+
+.class-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;
+}
+.class-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1rem; position: relative; transition: box-shadow 0.2s; overflow: hidden;
+}
+.class-card:hover { box-shadow: var(--shadow-md); }
+.class-stripe { position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 12px 12px 0 0; }
+.class-name { font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem; }
+.class-meta { font-size: 0.78rem; color: var(--muted); }
+.class-actions { display: flex; gap: 0.35rem; margin-top: 0.65rem; padding-top: 0.5rem; border-top: 1px solid var(--border-lt); }
+.class-action-btn {
+  padding: 0.25rem 0.5rem; border: none; background: transparent;
+  font-size: 0.75rem; font-family: 'DM Sans', sans-serif; font-weight: 600;
+  cursor: pointer; border-radius: 4px; transition: all 0.15s; color: var(--muted);
+}
+.class-action-btn:hover { background: #f1f0ec; color: var(--text); }
+.class-action-btn.delete:hover { background: #fee2e2; color: #dc2626; }
+
+/* Fag-panel */
+.class-selector {
+  display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1.25rem;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 0.35rem; box-shadow: var(--shadow);
+}
+.class-sel-btn {
+  padding: 0.5rem 1.1rem; border: none; background: transparent;
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; color: var(--muted); border-radius: 8px; transition: all 0.2s;
+}
+.class-sel-btn.active { background: var(--accent); color: white; }
+.class-sel-btn:not(.active):hover { background: #f5f3ef; }
+
+.subject-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.subject-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; transition: box-shadow 0.2s;
+}
+.subject-card:hover { box-shadow: var(--shadow-md); }
+.subject-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1rem; cursor: pointer; user-select: none; transition: background 0.15s;
+}
+.subject-head:hover { background: #faf9f7; }
+.subject-left { display: flex; align-items: center; gap: 0.6rem; }
+.subject-tag {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 0.2rem 0.6rem; border-radius: 4px; white-space: nowrap;
+}
+.subject-chev { color: var(--muted); transition: transform 0.25s; font-size: 0.85rem; }
+.subject-card.open .subject-chev { transform: rotate(180deg); }
+.subject-color-row { display: none; align-items: center; gap: 0.35rem; flex-wrap: wrap; padding: 0.6rem 1rem; border-top: 1px solid var(--border-lt); }
+.subject-card.open .subject-color-row { display: flex; }
+.subject-color-row .field-label { font-size: 0.75rem; margin-right: 0.25rem; }
+.subject-color-dot {
+  width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid transparent;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.subject-color-dot:hover { transform: scale(1.2); }
+.subject-color-dot.active { border-color: var(--text); box-shadow: 0 0 0 2px white inset; }
+.subject-body { display: none; padding: 0 1rem 1rem; border-top: none; }
+.subject-card.open .subject-body { display: block; }
+
+.groups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem; }
+@media(max-width:700px){ .groups-grid{grid-template-columns:1fr} }
+.group-col {
+  border: 1px solid var(--border-lt); border-radius: var(--radius-sm);
+  padding: 0.85rem; position: relative;
+}
+.group-stripe { position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 8px 8px 0 0; }
+.group-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border-lt); gap: 0.4rem;
+}
+.group-name-input {
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 700;
+  padding: 0.25rem 0.5rem; border: 1px solid transparent; border-radius: 4px;
+  background: transparent; flex: 1; min-width: 0;
+}
+.group-name-input:hover { border-color: var(--border); }
+.group-name-input:focus { outline: none; border-color: var(--accent); background: white; }
+.group-delete {
+  width: 24px; height: 24px; border: none; background: transparent;
+  color: var(--muted); font-size: 1rem; cursor: pointer; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0;
+}
+.group-delete:hover { background: #fee2e2; color: #dc2626; }
+
+.subject-equip-row { margin-top: 0.75rem; padding-top: 0.65rem; border-top: 1px solid var(--border-lt); }
+
+.add-group-btn {
+  display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+  min-height: 80px; border: 2px dashed var(--border); border-radius: var(--radius-sm);
+  background: transparent; font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem; font-weight: 600; color: var(--muted);
+  cursor: pointer; transition: all 0.2s; padding: 0.75rem; align-self: stretch;
+}
+.add-group-btn:hover { border-color: var(--accent); color: var(--accent); background: #f8faff; }
+
+.add-subject-area {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1rem; margin-top: 1rem;
+}
+.add-subject-area h3 { font-size: 0.88rem; font-weight: 700; margin-bottom: 0.75rem; }
+.add-subject-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; align-items: end; }
+@media(max-width:600px){ .add-subject-grid{grid-template-columns:1fr} }
+
+.color-picker { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.35rem; }
+.color-swatch {
+  width: 28px; height: 28px; border-radius: 6px; border: 2px solid transparent;
+  cursor: pointer; transition: all 0.15s;
+}
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.selected { border-color: var(--text); box-shadow: 0 0 0 2px white, 0 0 0 4px var(--text); }
+
+.quick-add { margin-top: 0.75rem; }
+.quick-add-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 0.4rem; }
+.quick-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.quick-chip {
+  padding: 0.3rem 0.7rem; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--card); font-family: 'DM Sans', sans-serif; font-size: 0.8rem;
+  font-weight: 500; cursor: pointer; transition: all 0.15s; color: var(--text);
+}
+.quick-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.quick-chip.added { opacity: 0.4; pointer-events: none; text-decoration: line-through; }
+
+/* Lærer-autocomplete i Fag-panel */
+.teacher-ac-wrapper {
+  position: relative;
+}
+.teacher-ac-tags {
+  display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center;
+  min-height: 34px; padding: 0.3rem 0.45rem;
+  border: 1.5px solid #d2d6dc; border-radius: 6px;
+  background: #f0f4f8; cursor: text; transition: border-color 0.15s, background 0.15s;
+}
+.teacher-ac-tags:focus-within {
+  border-color: var(--accent); background: white;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+}
+.teacher-ac-tag {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.15rem 0.5rem; border-radius: 4px;
+  background: var(--accent); color: white;
+  font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+}
+.teacher-ac-tag .tag-remove {
+  cursor: pointer; font-size: 0.9rem; line-height: 1;
+  opacity: 0.7; transition: opacity 0.15s; margin-left: 0.15rem;
+}
+.teacher-ac-tag .tag-remove:hover { opacity: 1; }
+.teacher-ac-input {
+  border: none; outline: none; background: transparent;
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+  flex: 1; min-width: 80px; padding: 0.1rem 0.2rem;
+}
+.teacher-ac-input::placeholder { color: #a0aec0; }
+.teacher-ac-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: white; border: 1.5px solid var(--border);
+  border-radius: 6px; box-shadow: var(--shadow-md);
+  max-height: 180px; overflow-y: auto; z-index: 50;
+  display: none; margin-top: 2px;
+}
+.teacher-ac-dropdown.open { display: block; }
+.teacher-ac-option {
+  padding: 0.5rem 0.75rem; cursor: pointer;
+  font-size: 0.84rem; font-weight: 500;
+  transition: background 0.1s; display: flex; align-items: center; gap: 0.5rem;
+}
+.teacher-ac-option:hover, .teacher-ac-option.highlighted {
+  background: var(--accent-light); color: var(--accent);
+}
+.teacher-ac-option .ac-username {
+  font-size: 0.72rem; color: var(--muted); font-weight: 400;
+}
+.teacher-ac-empty {
+  padding: 0.5rem 0.75rem; font-size: 0.82rem; color: var(--muted); font-style: italic;
+}
+
+/* Tildelinger-panel */
+.assign-toggle {
+  display: flex; gap: 0.25rem; margin-bottom: 1.25rem;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 0.3rem; box-shadow: var(--shadow);
+}
+.assign-toggle-btn {
+  flex: 1; padding: 0.6rem 1.2rem; border: none; background: transparent;
+  font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; color: var(--muted); border-radius: 8px; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+}
+.assign-toggle-btn.active { background: var(--accent); color: white; }
+.assign-toggle-btn:not(.active):hover { background: #f5f3ef; }
+.assign-view { display: none; }
+.assign-view.active { display: block; }
+.assign-search {
+  width: 100%; padding: 0.5rem 0.75rem; margin-bottom: 0.75rem;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+  background: var(--card); color: var(--text); outline: none;
+  transition: border-color 0.2s;
+}
+.assign-search:focus { border-color: var(--accent); }
+
+.assignment-section { margin-bottom: 1.5rem; }
+.assignment-section h3 {
+  font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;
+}
+
+/* Kompakte l\u00e6rerkort i grid - 4 i bredden */
+.teacher-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;
+}
+@media(max-width:1000px){ .teacher-grid { grid-template-columns: repeat(3, 1fr); } }
+@media(max-width:750px){ .teacher-grid { grid-template-columns: repeat(2, 1fr); } }
+@media(max-width:480px){ .teacher-grid { grid-template-columns: 1fr; } }
+.teacher-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 0.5rem 0.6rem; transition: box-shadow 0.2s;
+}
+.teacher-card:hover { box-shadow: var(--shadow-md); }
+.teacher-card-name {
+  font-size: 0.78rem; font-weight: 700; margin-bottom: 0.35rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.teacher-card-classes { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.class-toggle-btn {
+  padding: 0.18rem 0.45rem; border: 1.5px solid var(--border); border-radius: 5px;
+  background: transparent; font-family: 'DM Sans', sans-serif; font-size: 0.7rem;
+  font-weight: 600; cursor: pointer; transition: all 0.18s; color: var(--muted);
+}
+.class-toggle-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.class-toggle-btn.active {
+  border-color: transparent; color: white;
+}
+
+/* Elevtildelinger - listevisning */
+.student-assign-list {
+  margin-bottom: 0.5rem;
+}
+.student-assign-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--border-lt);
+  transition: background 0.1s;
+}
+.student-assign-row:hover { background: #faf9f7; }
+.student-assign-row:last-child { border-bottom: none; }
+.student-assign-name {
+  font-size: 0.84rem; font-weight: 600; width: 180px; flex-shrink: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.student-assign-classes {
+  display: flex; flex-wrap: wrap; gap: 0.25rem; flex: 1;
+}
+@media(max-width:600px){ .student-assign-name { width: 120px; } }
+
+/* Kollapsbar klassegruppe for elever */
+.student-class-section {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 0.6rem; overflow: hidden;
+}
+.student-class-head {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.85rem;
+  cursor: pointer; user-select: none; transition: background 0.15s;
+}
+.student-class-head:hover { background: #faf9f7; }
+.student-class-head .class-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.student-class-head h3 {
+  font-size: 0.88rem; font-weight: 700; margin: 0; flex: 1;
+}
+.student-class-head .class-count {
+  font-size: 0.75rem; color: var(--muted); font-weight: 600;
+}
+.student-class-chev {
+  color: var(--muted); transition: transform 0.25s; font-size: 0.8rem;
+}
+.student-class-section.open .student-class-chev { transform: rotate(180deg); }
+.student-class-body {
+  display: none; border-top: 1px solid var(--border-lt);
+}
+.student-class-section.open .student-class-body { display: block; }
+
+/* Brukere-panel */
+.user-table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.user-table th {
+  padding: 0.6rem 0.85rem; text-align: left; font-size: 0.78rem; font-weight: 700;
+  text-transform: uppercase; color: var(--muted); background: #faf9f7; border-bottom: 2px solid var(--border);
+}
+.user-table td {
+  padding: 0.55rem 0.85rem; border-bottom: 1px solid var(--border-lt); font-size: 0.85rem;
+}
+.user-table tr:last-child td { border-bottom: none; }
+.user-table tr:hover td { background: #faf9f7; }
+
+.user-add-bar {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; margin-bottom: 0.6rem;
+}
+.user-add-toggle {
+  display: flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem;
+  background: #16a34a; border: 1px solid #15803d; border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; transition: all 0.18s; color: #fff;
+}
+.user-add-toggle:hover { background: #15803d; box-shadow: var(--shadow); }
+.user-add-fields {
+  display: none; gap: 0.35rem; align-items: center; flex-wrap: wrap;
+  padding: 0.45rem 0.6rem; width: 100%;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+.user-add-fields.open { display: flex; }
+.user-add-fields .field-input { flex: 1; min-width: 100px; padding: 0.35rem 0.55rem; font-size: 0.82rem; }
+.user-add-fields select.field-input { flex: 0 0 auto; min-width: 80px; }
+.user-add-fields .btn { padding: 0.35rem 0.7rem; font-size: 0.8rem; white-space: nowrap; }
+
+.csv-area {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1rem; margin-bottom: 1rem;
+}
+.csv-area h3 { font-size: 0.88rem; font-weight: 700; margin-bottom: 0.5rem; }
+.csv-dropzone {
+  border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 1.5rem;
+  text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 0.75rem;
+}
+.csv-dropzone:hover { border-color: var(--accent); background: #f8faff; }
+.csv-dropzone.dragover { border-color: var(--accent); background: var(--accent-light); }
+.csv-preview { max-height: 200px; overflow-y: auto; margin-top: 0.75rem; }
+.csv-preview table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.csv-preview th { padding: 0.35rem 0.5rem; background: #f5f3ef; font-weight: 700; text-align: left; border-bottom: 1px solid var(--border); }
+.csv-preview td { padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border-lt); }
+
+.user-count { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.count-badge {
+  display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.85rem;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 0.82rem; font-weight: 600;
+}
+.count-num { font-size: 1.1rem; font-weight: 800; }
+
+.dup-row { background: #fff7ed !important; }
+.dup-badge {
+  display: inline-block; padding: 0.15rem 0.45rem; border-radius: 4px;
+  background: #fef3c7; color: #92400e; font-size: 0.7rem; font-weight: 700; margin-left: 0.35rem;
+}
+.dup-bar {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  background: #fff7ed; border: 1px solid #fed7aa; border-radius: var(--radius-sm);
+  padding: 0.65rem 1rem; margin-bottom: 1rem; font-size: 0.82rem;
+}
+.dup-bar strong { color: #c2410c; }
+.class-group-header {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, #eff6ff, #f0f9ff); border: 1px solid #bfdbfe;
+  border-radius: var(--radius-sm); margin-bottom: 0.5rem; margin-top: 1rem;
+}
+.class-group-header:first-of-type { margin-top: 0; }
+.class-group-name { font-size: 0.88rem; font-weight: 700; color: var(--accent); }
+.class-group-count { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+
+.bulk-actions {
+  display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;
+  padding: 0.5rem 0.75rem; margin-bottom: 0.75rem;
+  background: #faf9f7; border: 1px solid var(--border-lt); border-radius: var(--radius-sm);
+}
+.bulk-actions span { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+.btn-danger-sm {
+  padding: 0.28rem 0.65rem; border: 1px solid #fca5a5; border-radius: 5px;
+  background: #fff1f2; font-family: 'DM Sans', sans-serif; font-size: 0.75rem;
+  font-weight: 600; cursor: pointer; color: #dc2626; transition: all 0.18s;
+}
+.btn-danger-sm:hover { background: #fee2e2; border-color: #f87171; }
+
+/* Brukergruppe-knapper */
+.user-group-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
+.user-group-btn {
+  display: flex; align-items: center; gap: 0.45rem; padding: 0.4rem 0.75rem;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer; user-select: none; transition: all 0.18s; position: relative;
+  overflow: hidden;
+}
+.user-group-btn:hover { box-shadow: var(--shadow); border-color: #cbd5e0; }
+.user-group-btn.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); background: #f0f4ff; }
+.user-group-btn-stripe {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+}
+.user-group-btn-icon { font-size: 0.85rem; flex-shrink: 0; margin-left: 0.15rem; }
+.user-group-btn-title { font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
+.user-group-btn-count {
+  font-family: 'Fraunces', serif; font-size: 0.95rem; font-weight: 800;
+  min-width: 20px; text-align: center;
+}
+
+/* Felles detaljfelt */
+.user-detail-panel {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1rem; min-height: 80px;
+}
+.user-detail-panel .user-detail-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-lt);
+}
+.user-detail-panel .user-detail-title {
+  font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;
+}
+.user-detail-empty {
+  text-align: center; padding: 2rem; color: var(--muted); font-size: 0.88rem;
+}
+
+@media(max-width:700px){
+  .class-grid { grid-template-columns: 1fr 1fr; }
+}
+@media(max-width:400px){
+  .class-grid { grid-template-columns: 1fr; }
+}
+
+/* Timeplan-tabell */
+.tt-table {
+  width: 100%; border-collapse: collapse;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.tt-table th {
+  padding: 0.55rem 0.5rem; text-align: center;
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  color: var(--muted); background: #faf9f7;
+  border-bottom: 2px solid var(--border);
+}
+.tt-table td {
+  padding: 0.35rem; border-bottom: 1px solid var(--border-lt);
+  vertical-align: top;
+}
+.tt-table tr:last-child td { border-bottom: none; }
+.tt-table td:last-child { width: 36px; text-align: center; }
+
+.tt-day-cell {
+  min-width: 130px; padding: 0.35rem; border-radius: 6px; transition: background 0.2s;
+}
+.tt-time-row {
+  display: flex; align-items: center; gap: 0.2rem; margin-bottom: 0.25rem;
+}
+.tt-time-input {
+  width: 68px; padding: 0.2rem 0.3rem; border: 1.5px solid var(--border);
+  border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 0.75rem;
+  text-align: center; background: #fafaf8;
+}
+.tt-time-input:focus { outline: none; border-color: var(--accent); background: white; }
+.tt-time-sep { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+.tt-day-cell select {
+  width: 100%; padding: 0.28rem 0.4rem; border: 1.5px solid var(--border);
+  border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 0.76rem;
+  background: #fafaf8; cursor: pointer; margin-bottom: 0.2rem;
+}
+.tt-day-cell select:focus { outline: none; border-color: var(--accent); }
+
+.tt-entry-row {
+  display: flex; align-items: center; gap: 0.2rem; margin-bottom: 0.2rem;
+  padding: 0.15rem; border-radius: 4px; position: relative;
+}
+.tt-entry-row select { flex: 1; min-width: 0; }
+.tt-entry-del {
+  width: 20px; height: 20px; border: none; background: transparent;
+  color: #ccc; font-size: 0.85rem; cursor: pointer; border-radius: 3px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: all 0.15s;
+}
+.tt-entry-del:hover { color: #ef4444; background: #fee2e2; }
+.tt-add-entry-btn {
+  width: 100%; border: 1.5px dashed var(--border); background: transparent;
+  color: var(--muted); font-size: 0.72rem; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  cursor: pointer; padding: 0.2rem; border-radius: 4px; transition: all 0.15s;
+  margin-top: 0.1rem;
+}
+.tt-add-entry-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(37,99,235,0.04); }
+
+.tt-copy-btn {
+  border: none; background: transparent; color: var(--muted);
+  font-size: 0.72rem; cursor: pointer; padding: 0.1rem 0.25rem;
+  border-radius: 3px; transition: all 0.15s; white-space: nowrap;
+}
+.tt-copy-btn:hover { background: var(--accent-light); color: var(--accent); }
+
+.tt-copy-panel {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 0.75rem 1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.tt-copy-panel label { font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
+.tt-copy-panel select {
+  padding: 0.35rem 0.5rem; border: 1.5px solid var(--border); border-radius: 4px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem; background: #fafaf8;
+}
+.tt-copy-panel button {
+  padding: 0.35rem 0.75rem; border: none; border-radius: 4px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.tt-copy-panel .tt-copy-time { background: var(--border); color: var(--text); }
+.tt-copy-panel .tt-copy-time:hover { background: var(--muted); color: white; }
+.tt-copy-panel .tt-copy-all { background: var(--accent); color: white; }
+.tt-copy-panel .tt-copy-all:hover { background: #1d4ed8; }
+
+.tt-del-btn {
+  width: 28px; height: 28px; border: none; background: transparent;
+  color: var(--muted); font-size: 1.1rem; cursor: pointer; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.tt-del-btn:hover { background: #fee2e2; color: #dc2626; }
+
+@media(max-width:800px) {
+  .tt-table { display: block; overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div style="color:var(--muted);font-size:0.88rem;">Laster...</div>
+</div>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div>
+      <div class="topbar-title">Admin &ndash; Ukeplan</div>
+      <div class="topbar-sub" id="school-sub">
+        <span id="school-name-area"></span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('classes')">Klasser</button>
+        <button class="tab-btn" onclick="switchTab('subjects')">Fag</button>
+        <button class="tab-btn" onclick="switchTab('users')">Brukere</button>
+        <button class="tab-btn" onclick="switchTab('assignments')">Tildelinger</button>
+        <button class="tab-btn" onclick="switchTab('timetable')">Timeplan</button>
+      </div>
+      <div id="auth-topbar"></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- KLASSER -->
+  <div class="panel active" id="panel-classes">
+    <h2 class="section-title">Klasser</h2>
+    <div class="add-row">
+      <input class="add-input" id="newClassName" placeholder="Navn p&aring; klasse, f.eks. 8A" onkeydown="if(event.key==='Enter') addClass()">
+      <button class="btn btn-primary" onclick="addClass()">+ Legg til klasse</button>
+    </div>
+    <div class="quick-add">
+      <div class="quick-add-label">Hurtiglegg til vanlige klasser:</div>
+      <div class="quick-chips" id="quick-class-chips"></div>
+    </div>
+    <div id="class-list" style="margin-top:1rem;"></div>
+    <div id="class-bulk-actions"></div>
+  </div>
+
+  <!-- FAG -->
+  <div class="panel" id="panel-subjects">
+    <h2 class="section-title">Fag</h2>
+    <div id="no-classes-msg" class="empty-state" style="display:none">
+      <h3>Ingen klasser opprettet</h3>
+      <p>G&aring; til fanen &laquo;Klasser&raquo; for &aring; opprette klasser f&oslash;rst.</p>
+    </div>
+    <div id="subjects-content" style="display:none">
+      <div class="class-selector" id="class-selector"></div>
+      <div class="add-subject-area">
+        <h3>Legg til fag</h3>
+        <div class="add-subject-grid">
+          <div>
+            <div class="field-label">Fagnavn</div>
+            <input class="field-input" id="newSubjectName" placeholder="F.eks. Matematikk" onkeydown="if(event.key==='Enter') addSubject()">
+          </div>
+          <div>
+            <div class="field-label">Farge</div>
+            <div class="color-picker" id="color-picker"></div>
+          </div>
+          <button class="btn btn-primary" onclick="addSubject()" style="align-self:end">+ Legg til</button>
+        </div>
+        <div class="quick-add" style="margin-top:0.75rem">
+          <div class="quick-add-label">Hurtiglegg til vanlige fag:</div>
+          <div class="quick-chips" id="quick-subject-chips"></div>
+        </div>
+      </div>
+      <div class="subject-list" id="subject-list" style="margin-top:1rem;"></div>
+    </div>
+  </div>
+
+  <!-- BRUKERE -->
+  <div class="panel" id="panel-users">
+    <!-- Legg-til-rad (skjult som standard) -->
+    <div class="user-add-bar">
+      <button class="user-add-toggle" onclick="toggleAddUser()">+ Ny bruker</button>
+      <div class="user-add-fields" id="user-add-fields">
+        <input class="field-input" id="newUserUsername" placeholder="Brukernavn">
+        <input class="field-input" id="newUserDisplay" placeholder="Visningsnavn">
+        <select class="field-input" id="newUserRole">
+          <option value="teacher">L&aelig;rer</option>
+          <option value="student">Elev</option>
+        </select>
+        <button class="btn btn-primary" onclick="addUserManual()">Legg til</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('csv-file').click()" title="Importer fra CSV">&#128196; CSV</button>
+      </div>
+    </div>
+    <input type="file" id="csv-file" accept=".csv,.txt" style="display:none" onchange="handleCSVSelect(event)">
+    <div id="csv-preview-area" style="display:none;margin-bottom:0.75rem;">
+      <div id="csv-preview"></div>
+      <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+        <button class="btn btn-green" onclick="importCSVUsers()">Importer brukere</button>
+        <button class="btn btn-secondary" onclick="cancelCSVImport()">Avbryt</button>
+      </div>
+    </div>
+
+    <!-- Brukerliste -->
+    <div id="user-list"></div>
+  </div>
+
+  <!-- TILDELINGER -->
+  <div class="panel" id="panel-assignments">
+    <h2 class="section-title">Tildelinger</h2>
+
+    <div class="assign-toggle">
+      <button class="assign-toggle-btn active" onclick="switchAssignView('teacher')">
+        <span class="role-badge teacher" style="font-size:0.7rem;">L&aelig;rer</span> Tildel klasser
+      </button>
+      <button class="assign-toggle-btn" onclick="switchAssignView('student')">
+        <span class="role-badge student" style="font-size:0.7rem;">Elev</span> Tildel klasse
+      </button>
+    </div>
+
+    <div class="assign-view active" id="assign-teacher-view">
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Klikk p&aring; klassene for &aring; gi l&aelig;reren tilgang til &aring; redigere ukeplaner.</p>
+      <input type="text" id="teacher-search" class="assign-search" placeholder="S&oslash;k etter l&aelig;rer..." oninput="filterTeacherCards(this.value)">
+      <div id="teacher-assignments"></div>
+    </div>
+
+    <div class="assign-view" id="assign-student-view">
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Velg hvilken klasse eleven/foresatt skal se ukeplanen for.</p>
+      <div id="student-assignments"></div>
+    </div>
+  </div>
+
+  <!-- TIMEPLAN -->
+  <div class="panel" id="panel-timetable">
+    <h2 class="section-title">Timeplan</h2>
+    <div id="tt-no-classes" class="empty-state" style="display:none">
+      <h3>Ingen klasser opprettet</h3>
+      <p>G&aring; til fanen &laquo;Klasser&raquo; for &aring; opprette klasser f&oslash;rst.</p>
+    </div>
+    <div id="tt-content" style="display:none">
+      <div class="class-selector" id="tt-class-selector"></div>
+      <div id="tt-copy-panel"></div>
+      <div id="tt-no-subjects" class="empty-state" style="display:none">
+        <h3>Ingen fag i denne klassen</h3>
+        <p>G&aring; til fanen &laquo;Fag&raquo; for &aring; legge til fag f&oslash;rst.</p>
+      </div>
+      <div id="tt-table-area"></div>
+      <button class="btn btn-primary" onclick="addTimetableRow()" id="tt-add-row-btn" style="margin-top:0.75rem;display:none;">+ Legg til rad</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Lagret!</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script src="auth.js"></script>
+<script src="data.js"></script>
+
+<script>
+// ═══════════════════════════════════════
+//  ADMIN - INIT & AUTH
+// ═══════════════════════════════════════
+const session = checkAuth('admin');
+if (session) {
+  document.getElementById('auth-topbar').innerHTML = renderAuthTopbar(session);
+  init();
+}
+
+const CLASS_COLORS = [
+  '#2563eb','#059669','#ea580c','#7c3aed','#e11d48',
+  '#0891b2','#ca8a04','#6d28d9','#0d9488','#c026d3'
+];
+
+const SUBJECT_COLORS = [
+  { bg:'#fef08a', fg:'#854d0e', name:'Gul' },
+  { bg:'#fecaca', fg:'#991b1b', name:'R\u00f8d' },
+  { bg:'#a7f3d0', fg:'#065f46', name:'Gr\u00f8nn' },
+  { bg:'#bfdbfe', fg:'#1e3a8a', name:'Bl\u00e5' },
+  { bg:'#f5d0fe', fg:'#86198f', name:'Lilla' },
+  { bg:'#86efac', fg:'#14532d', name:'Lime' },
+  { bg:'#fed7aa', fg:'#9a3412', name:'Oransje' },
+  { bg:'#fbcfe8', fg:'#9d174d', name:'Rosa' },
+  { bg:'#7dd3fc', fg:'#0c4a6e', name:'Lysebl\u00e5' },
+  { bg:'#d8b4fe', fg:'#581c87', name:'Fiolett' },
+  { bg:'#67e8f9', fg:'#164e63', name:'Turkis' },
+  { bg:'#d9f99d', fg:'#365314', name:'Lysegr\u00f8nn' },
+  { bg:'#d4d4d8', fg:'#3f3f46', name:'Gr\u00e5' },
+  { bg:'#fde68a', fg:'#92400e', name:'Honning' },
+  { bg:'#c7d2fe', fg:'#3730a3', name:'Indigo' },
+  { bg:'#fca5a5', fg:'#7f1d1d', name:'Korall' },
+  { bg:'#a5f3fc', fg:'#155e75', name:'Aqua' },
+  { bg:'#e9d5ff', fg:'#6b21a8', name:'Lavendel' },
+  { bg:'#bef264', fg:'#3f6212', name:'Eplgr\u00f8nn' },
+  { bg:'#fdba74', fg:'#7c2d12', name:'Fersken' },
+  { bg:'#f0abfc', fg:'#701a75', name:'Magenta' },
+  { bg:'#99f6e4', fg:'#134e4a', name:'Mint' },
+  { bg:'#fcd34d', fg:'#78350f', name:'Gull' },
+];
+
+const QUICK_CLASSES = ['8A','8B','8C','9A','9B','9C','10A','10B','10C'];
+const QUICK_SUBJECTS = [
+  { name:'Matematikk', colorIdx:0 },
+  { name:'Norsk', colorIdx:1 },
+  { name:'Engelsk', colorIdx:2 },
+  { name:'Samfunnsfag', colorIdx:3 },
+  { name:'KRLE', colorIdx:4 },
+  { name:'Naturfag', colorIdx:5 },
+  { name:'K&H', colorIdx:6 },
+  { name:'Musikk', colorIdx:7 },
+  { name:'Spr\u00e5klig fordypning', colorIdx:8 },
+  { name:'Kropps\u00f8ving', colorIdx:9 },
+  { name:'Valgfag', colorIdx:12 },
+];
+
+let classes = [];
+let classSubjects = {};
+let selectedClassId = null;
+let selectedColorIdx = 0;
+
+// Timeplan state
+let selectedTTClassId = null;
+let timetableRows = [];
+let ttSaveTimer;
+const TT_DAYS = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag'];
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+async function init() {
+  try {
+    // Last data fra Firebase
+    currentSchoolName = await DataService.getSchoolName() || '';
+    renderSchoolName();
+
+    classes = await DataService.getClasses();
+    classSubjects = await DataService.getAllSubjects();
+    allUsers = await DataService.getUsers();
+
+    renderClasses();
+    renderQuickClassChips();
+    hideLoading();
+  } catch (err) {
+    console.error('Feil ved lasting:', err);
+    hideLoading();
+    showToast('Feil ved lasting av data');
+  }
+}
+
+function hideLoading() {
+  document.getElementById('loading').style.display = 'none';
+}
+
+// ═══════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════
+function switchTab(tab) {
+  const tabs = ['classes', 'subjects', 'users', 'assignments', 'timetable'];
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', tabs[i] === tab);
+  });
+  tabs.forEach(t => {
+    const panel = document.getElementById('panel-' + t);
+    if (panel) panel.classList.toggle('active', t === tab);
+  });
+
+  if (tab === 'subjects') renderSubjectsPanel();
+  if (tab === 'users') renderUsersPanel();
+  if (tab === 'assignments') renderAssignments();
+  if (tab === 'timetable') renderTimetablePanel();
+}
+
+// ═══════════════════════════════════════
+//  KOLLAPSBARE SEKSJONER
+// ═══════════════════════════════════════
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+// ═══════════════════════════════════════
+//  SKOLENAVN I TOPBAR
+// ═══════════════════════════════════════
+let currentSchoolName = '';
+
+function renderSchoolName() {
+  const area = document.getElementById('school-name-area');
+  if (!area) return;
+  if (currentSchoolName) {
+    area.innerHTML = '<span class="school-name-display" onclick="editSchoolName()" title="Klikk for å endre skolenavn">' + escHtml(currentSchoolName) + '</span>';
+  } else {
+    area.innerHTML = '<span class="school-name-display empty" onclick="editSchoolName()" title="Klikk for å sette skolenavn">Sett skolenavn…</span>';
+  }
+}
+
+function editSchoolName() {
+  const area = document.getElementById('school-name-area');
+  if (!area) return;
+  area.innerHTML = '<input class="school-name-edit" id="school-name-input" value="' + escHtml(currentSchoolName) + '" placeholder="Skriv skolenavn…" onblur="saveSchoolName()" onkeydown="if(event.key===\'Enter\') this.blur()">';
+  const inp = document.getElementById('school-name-input');
+  if (inp) { inp.focus(); inp.select(); }
+}
+
+function saveSchoolName() {
+  const inp = document.getElementById('school-name-input');
+  if (!inp) return;
+  const val = inp.value.trim();
+  currentSchoolName = val;
+  DataService.setSchoolName(val).then(() => {
+    showToast('Skolenavn lagret');
+  }).catch(err => {
+    console.error('Feil ved lagring av skolenavn:', err);
+    showToast('Kunne ikke lagre skolenavn');
+  });
+  renderSchoolName();
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ═══════════════════════════════════════
+//  KLASSER
+// ═══════════════════════════════════════
+async function addClass() {
+  const input = document.getElementById('newClassName');
+  const name = input.value.trim();
+  if (!name) return;
+
+  if (classes.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+    showToast('Klassen finnes allerede');
+    return;
+  }
+
+  const id = 'cls-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+  const colorIdx = classes.length % CLASS_COLORS.length;
+  const cls = { id, name, color: CLASS_COLORS[colorIdx] };
+
+  classes.push(cls);
+  classSubjects[id] = [];
+  input.value = '';
+
+  await DataService.addClass(cls);
+  renderClasses();
+  renderQuickClassChips();
+  showToast('Klasse lagt til');
+}
+
+async function addClassByName(name) {
+  if (classes.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+    showToast('Klassen finnes allerede');
+    return;
+  }
+  const id = 'cls-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+  const colorIdx = classes.length % CLASS_COLORS.length;
+  const cls = { id, name, color: CLASS_COLORS[colorIdx] };
+
+  classes.push(cls);
+  classSubjects[id] = [];
+
+  await DataService.addClass(cls);
+  renderClasses();
+  renderQuickClassChips();
+}
+
+function deleteClass(classId) {
+  showConfirm('Slett klasse', 'Er du sikker p\u00e5 at du vil slette denne klassen og alle fagene i den?', async () => {
+    classes = classes.filter(c => c.id !== classId);
+    delete classSubjects[classId];
+    if (selectedClassId === classId) selectedClassId = null;
+
+    await DataService.deleteClass(classId);
+    renderClasses();
+    renderQuickClassChips();
+    showToast('Klasse slettet');
+  });
+}
+
+function renameClass(classId) {
+  const cls = classes.find(c => c.id === classId);
+  if (!cls) return;
+  const newName = prompt('Nytt navn p\u00e5 klassen:', cls.name);
+  if (newName && newName.trim()) {
+    cls.name = newName.trim();
+    DataService.updateClass(classId, { name: cls.name });
+    renderClasses();
+    showToast('Klasse omd\u00f8pt');
+  }
+}
+
+function renderClasses() {
+  const container = document.getElementById('class-list');
+  const bulkContainer = document.getElementById('class-bulk-actions');
+
+  if (classes.length === 0) {
+    container.innerHTML = `<div class="empty-state fade-in">
+      <h3>Ingen klasser enda</h3>
+      <p>Legg til klasser ovenfor for \u00e5 komme i gang.</p>
+    </div>`;
+    bulkContainer.innerHTML = '';
+    return;
+  }
+
+  let html = '<div class="class-grid">';
+  classes.forEach(cls => {
+    const subjectCount = (classSubjects[cls.id] || []).length;
+    html += `<div class="class-card fade-in">
+      <div class="class-stripe" style="background:${cls.color}"></div>
+      <div class="class-name" style="color:${cls.color}">${esc(cls.name)}</div>
+      <div class="class-meta">${subjectCount} fag</div>
+      <div class="class-actions">
+        <button class="class-action-btn" onclick="renameClass('${cls.id}')">Gi nytt navn</button>
+        <button class="class-action-btn" onclick="goToSubjects('${cls.id}')">Rediger fag</button>
+        <button class="class-action-btn delete" onclick="deleteClass('${cls.id}')">Slett</button>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+
+  bulkContainer.innerHTML = `<div class="bulk-actions" style="margin-top:1rem;">
+    <span>Massehandlinger:</span>
+    <button class="btn-danger-sm" onclick="deleteAllClasses()">Slett alle klasser (${classes.length})</button>
+  </div>`;
+}
+
+function goToSubjects(classId) {
+  selectedClassId = classId;
+  switchTab('subjects');
+}
+
+function renderQuickClassChips() {
+  const container = document.getElementById('quick-class-chips');
+  container.innerHTML = QUICK_CLASSES.map(name => {
+    const exists = classes.some(c => c.name === name);
+    return `<button class="quick-chip ${exists ? 'added' : ''}" onclick="addClassByName('${name}')">${name}</button>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+//  FAG
+// ═══════════════════════════════════════
+function renderSubjectsPanel() {
+  if (classes.length === 0) {
+    document.getElementById('no-classes-msg').style.display = '';
+    document.getElementById('subjects-content').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('no-classes-msg').style.display = 'none';
+  document.getElementById('subjects-content').style.display = '';
+
+  if (!selectedClassId || !classes.find(c => c.id === selectedClassId)) {
+    selectedClassId = classes[0].id;
+  }
+
+  renderClassSelector();
+  renderSubjectList();
+  renderColorPicker();
+  renderQuickSubjectChips();
+}
+
+function renderClassSelector() {
+  const container = document.getElementById('class-selector');
+  container.innerHTML = classes.map(cls => {
+    const active = cls.id === selectedClassId ? 'active' : '';
+    return `<button class="class-sel-btn ${active}" onclick="selectClass('${cls.id}')">${esc(cls.name)}</button>`;
+  }).join('');
+}
+
+function selectClass(classId) {
+  selectedClassId = classId;
+  renderClassSelector();
+  renderSubjectList();
+  renderQuickSubjectChips();
+}
+
+function renderSubjectList() {
+  const container = document.getElementById('subject-list');
+  const subjects = classSubjects[selectedClassId] || [];
+
+  if (subjects.length === 0) {
+    container.innerHTML = `<div class="empty-state fade-in">
+      <h3>Ingen fag i denne klassen</h3>
+      <p>Legg til fag nedenfor eller bruk hurtiglegg-knappene.</p>
+    </div>`;
+    return;
+  }
+
+  let html = '';
+  subjects.forEach((subj, si) => {
+    const color = SUBJECT_COLORS[subj.colorIdx] || SUBJECT_COLORS[0];
+    html += `<div class="subject-card" id="subj-${si}">
+      <div class="subject-head" onclick="toggleSubject(${si})" style="background:${color.bg}22">
+        <div class="subject-left">
+          <span class="subject-tag" style="background:${color.bg};color:${color.fg}">${esc(subj.name)}</span>
+          <span style="font-size:0.82rem;color:var(--muted)">${subj.groups.length} gruppe${subj.groups.length !== 1 ? 'r' : ''}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <button class="class-action-btn delete" onclick="event.stopPropagation();deleteSubject(${si})" title="Slett fag">Slett</button>
+          <span class="subject-chev">\u25be</span>
+        </div>
+      </div>
+      <div class="subject-color-row">
+        <span class="field-label">Farge:</span>`;
+    SUBJECT_COLORS.forEach((c, ci) => {
+      const active = ci === subj.colorIdx ? 'active' : '';
+      html += `<span class="subject-color-dot ${active}" style="background:${c.bg}" title="${c.name || ''}" onclick="event.stopPropagation();changeSubjectColor(${si},${ci})"></span>`;
+    });
+    html += `</div>
+      <div class="subject-body">
+        <div class="groups-grid">`;
+
+    subj.groups.forEach((g, gi) => {
+      const gColor = CLASS_COLORS[gi % CLASS_COLORS.length];
+      html += `<div class="group-col" style="background:${gColor}08">
+        <div class="group-stripe" style="background:${gColor}"></div>
+        <div class="group-header">
+          <input class="group-name-input" value="${esc(g.name)}" style="color:${gColor}"
+            onchange="updateGroup(${si},${gi},'name',this.value)">
+          <button class="group-delete" onclick="deleteGroup(${si},${gi})" title="Slett gruppe">&times;</button>
+        </div>
+        <div class="field">
+          <div class="field-label">Lærere</div>
+          <div class="teacher-ac-wrapper" id="tac-${si}-${gi}">
+            <div class="teacher-ac-tags" onclick="focusTeacherAcInput(${si},${gi})">
+              ${renderTeacherTags(g.teachers, si, gi)}
+              <input class="teacher-ac-input" id="tac-input-${si}-${gi}"
+                placeholder="${g.teachers ? '' : 'Søk etter lærer...'}"
+                oninput="onTeacherAcInput(${si},${gi},this.value)"
+                onfocus="onTeacherAcFocus(${si},${gi})"
+                onkeydown="onTeacherAcKeydown(event,${si},${gi})">
+            </div>
+            <div class="teacher-ac-dropdown" id="tac-dd-${si}-${gi}"></div>
+          </div>
+        </div>
+      </div>`;
+    });
+
+    html += `<button class="add-group-btn" onclick="addGroup(${si})">+ Legg til gruppe</button>`;
+    html += `</div>`;
+
+    html += `<div class="subject-equip-row">
+      <div class="field">
+        <div class="field-label">Utstyr \u00e5 ha med (alle grupper)</div>
+        <input class="field-input" value="${esc(subj.equip || '')}" placeholder="F.eks. blyant, bok, utekl\u00e6r..."
+          oninput="updateSubjectEquip(${si},this.value)">
+      </div>
+    </div>`;
+
+    html += `</div></div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleSubject(si) {
+  document.getElementById('subj-' + si).classList.toggle('open');
+}
+
+async function addSubject() {
+  const nameInput = document.getElementById('newSubjectName');
+  const name = nameInput.value.trim();
+  if (!name || !selectedClassId) return;
+
+  const subjects = classSubjects[selectedClassId] || [];
+  if (subjects.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+    showToast('Faget finnes allerede i denne klassen');
+    return;
+  }
+
+  const cls = classes.find(c => c.id === selectedClassId);
+  const newSubj = {
+    id: 'subj-' + Date.now(),
+    name: name,
+    colorIdx: selectedColorIdx,
+    groups: [{ name: cls ? cls.name : 'Gruppe 1', teachers: '' }],
+    equip: ''
+  };
+
+  subjects.push(newSubj);
+  classSubjects[selectedClassId] = subjects;
+  nameInput.value = '';
+
+  await DataService.setSubjects(selectedClassId, subjects);
+  renderSubjectList();
+  renderQuickSubjectChips();
+
+  setTimeout(() => {
+    const el = document.getElementById('subj-' + (subjects.length - 1));
+    if (el) el.classList.add('open');
+  }, 50);
+  showToast('Fag lagt til');
+}
+
+async function addSubjectByPreset(preset) {
+  if (!selectedClassId) return;
+  const subjects = classSubjects[selectedClassId] || [];
+  if (subjects.some(s => s.name.toLowerCase() === preset.name.toLowerCase())) {
+    showToast('Faget finnes allerede');
+    return;
+  }
+
+  const cls = classes.find(c => c.id === selectedClassId);
+  subjects.push({
+    id: 'subj-' + Date.now(),
+    name: preset.name,
+    colorIdx: preset.colorIdx,
+    groups: [{ name: cls ? cls.name : 'Gruppe 1', teachers: '' }],
+    equip: ''
+  });
+
+  classSubjects[selectedClassId] = subjects;
+  await DataService.setSubjects(selectedClassId, subjects);
+  renderSubjectList();
+  renderQuickSubjectChips();
+}
+
+function deleteSubject(si) {
+  const subjects = classSubjects[selectedClassId];
+  const subj = subjects[si];
+  showConfirm('Slett fag', `Er du sikker p\u00e5 at du vil slette ${subj.name}?`, async () => {
+    subjects.splice(si, 1);
+    await DataService.setSubjects(selectedClassId, subjects);
+    renderSubjectList();
+    renderQuickSubjectChips();
+    showToast('Fag slettet');
+  });
+}
+
+let groupSaveTimer;
+async function changeSubjectColor(si, newColorIdx) {
+  classSubjects[selectedClassId][si].colorIdx = newColorIdx;
+  await DataService.setSubjects(selectedClassId, classSubjects[selectedClassId]);
+  renderSubjectList();
+  showToast('Farge endret');
+}
+
+function updateGroup(si, gi, field, value) {
+  classSubjects[selectedClassId][si].groups[gi][field] = value;
+  clearTimeout(groupSaveTimer);
+  groupSaveTimer = setTimeout(() => {
+    DataService.setSubjects(selectedClassId, classSubjects[selectedClassId]);
+  }, 500);
+}
+
+let equipSaveTimer;
+function updateSubjectEquip(si, value) {
+  classSubjects[selectedClassId][si].equip = value;
+  clearTimeout(equipSaveTimer);
+  equipSaveTimer = setTimeout(() => {
+    DataService.setSubjects(selectedClassId, classSubjects[selectedClassId]);
+  }, 500);
+}
+
+async function addGroup(si) {
+  const subj = classSubjects[selectedClassId][si];
+  const groupNum = subj.groups.length + 1;
+  subj.groups.push({ name: 'Gruppe ' + groupNum, teachers: '' });
+  await DataService.setSubjects(selectedClassId, classSubjects[selectedClassId]);
+  renderSubjectList();
+  setTimeout(() => {
+    const el = document.getElementById('subj-' + si);
+    if (el) el.classList.add('open');
+  }, 50);
+}
+
+async function deleteGroup(si, gi) {
+  const subj = classSubjects[selectedClassId][si];
+  if (subj.groups.length <= 1) {
+    showToast('M\u00e5 ha minst \u00e9n gruppe');
+    return;
+  }
+  subj.groups.splice(gi, 1);
+  await DataService.setSubjects(selectedClassId, classSubjects[selectedClassId]);
+  renderSubjectList();
+  setTimeout(() => {
+    const el = document.getElementById('subj-' + si);
+    if (el) el.classList.add('open');
+  }, 50);
+}
+
+// ─── Lærer Autocomplete i Fag-panel ───
+
+// Parse teachers-streng til array av navn
+function parseTeacherNames(str) {
+  if (!str) return [];
+  return str.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+// Render teacher-tags HTML
+function renderTeacherTags(teachersStr, si, gi) {
+  const names = parseTeacherNames(teachersStr);
+  return names.map(name => {
+    const safeName = esc(name);
+    return `<span class="teacher-ac-tag" data-name="${safeName}">
+      ${safeName}
+      <span class="tag-remove" data-si="${si}" data-gi="${gi}" data-teacher="${safeName}"
+        onclick="event.stopPropagation();removeTeacherTag(+this.dataset.si,+this.dataset.gi,this.dataset.teacher)">&times;</span>
+    </span>`;
+  }).join('');
+}
+
+function focusTeacherAcInput(si, gi) {
+  const input = document.getElementById('tac-input-' + si + '-' + gi);
+  if (input) input.focus();
+}
+
+// Hent alle lærere som ikke allerede er tildelt denne gruppen
+function getAvailableTeachers(si, gi, query) {
+  const teachers = allUsers.filter(u => u.role === 'teacher');
+  const currentNames = parseTeacherNames(classSubjects[selectedClassId][si].groups[gi].teachers);
+  const currentNamesLower = currentNames.map(n => n.toLowerCase());
+  const q = (query || '').toLowerCase();
+
+  return teachers.filter(t => {
+    const displayName = t.displayName || t.username;
+    const alreadyAdded = currentNamesLower.includes(displayName.toLowerCase());
+    if (alreadyAdded) return false;
+    if (!q) return true;
+    return displayName.toLowerCase().includes(q) || t.username.toLowerCase().includes(q);
+  });
+}
+
+let acHighlightIdx = -1;
+
+function onTeacherAcInput(si, gi, query) {
+  acHighlightIdx = -1;
+  showTeacherDropdown(si, gi, query);
+}
+
+function onTeacherAcFocus(si, gi) {
+  const input = document.getElementById('tac-input-' + si + '-' + gi);
+  showTeacherDropdown(si, gi, input ? input.value : '');
+}
+
+function showTeacherDropdown(si, gi, query) {
+  const dd = document.getElementById('tac-dd-' + si + '-' + gi);
+  const available = getAvailableTeachers(si, gi, query);
+
+  if (available.length === 0 && query) {
+    dd.innerHTML = '<div class="teacher-ac-empty">Ingen lærere funnet</div>';
+    dd.classList.add('open');
+    return;
+  }
+
+  if (available.length === 0) {
+    dd.classList.remove('open');
+    return;
+  }
+
+  dd.innerHTML = available.map((t, i) => {
+    const displayName = t.displayName || t.username;
+    const hl = i === acHighlightIdx ? ' highlighted' : '';
+    return `<div class="teacher-ac-option${hl}" data-idx="${i}"
+      data-display="${esc(displayName)}" data-username="${esc(t.username)}"
+      onmousedown="event.preventDefault();selectTeacherFromOption(this,${si},${gi})"
+      onmouseenter="acHighlightIdx=${i};highlightAcOption('tac-dd-${si}-${gi}',${i})">
+      <span>${esc(displayName)}</span>
+      <span class="ac-username">${esc(t.username)}</span>
+    </div>`;
+  }).join('');
+  dd.classList.add('open');
+}
+
+function highlightAcOption(ddId, idx) {
+  const dd = document.getElementById(ddId);
+  if (!dd) return;
+  dd.querySelectorAll('.teacher-ac-option').forEach((el, i) => {
+    el.classList.toggle('highlighted', i === idx);
+  });
+}
+
+function onTeacherAcKeydown(event, si, gi) {
+  const dd = document.getElementById('tac-dd-' + si + '-' + gi);
+  const options = dd.querySelectorAll('.teacher-ac-option');
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    acHighlightIdx = Math.min(acHighlightIdx + 1, options.length - 1);
+    highlightAcOption('tac-dd-' + si + '-' + gi, acHighlightIdx);
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    acHighlightIdx = Math.max(acHighlightIdx - 1, 0);
+    highlightAcOption('tac-dd-' + si + '-' + gi, acHighlightIdx);
+  } else if (event.key === 'Enter') {
+    event.preventDefault();
+    if (acHighlightIdx >= 0 && acHighlightIdx < options.length) {
+      options[acHighlightIdx].dispatchEvent(new MouseEvent('mousedown'));
+    }
+  } else if (event.key === 'Escape') {
+    closeAllTeacherDropdowns();
+  } else if (event.key === 'Backspace' && event.target.value === '') {
+    // Fjern siste tag med Backspace på tomt felt
+    const names = parseTeacherNames(classSubjects[selectedClassId][si].groups[gi].teachers);
+    if (names.length > 0) {
+      removeTeacherTag(si, gi, names[names.length - 1]);
+    }
+  }
+}
+
+function selectTeacherFromOption(el, si, gi) {
+  const displayName = el.dataset.display;
+  const username = el.dataset.username;
+  selectTeacherAc(si, gi, displayName, username);
+}
+
+async function selectTeacherAc(si, gi, displayName, username) {
+  const group = classSubjects[selectedClassId][si].groups[gi];
+  const names = parseTeacherNames(group.teachers);
+  names.push(displayName);
+  group.teachers = names.join(', ');
+
+  // Lagre til Firebase
+  clearTimeout(groupSaveTimer);
+  await DataService.setSubjects(selectedClassId, classSubjects[selectedClassId]);
+
+  // Auto-tildel klassen til læreren
+  await autoAssignClassToTeacher(username, selectedClassId);
+
+  // Re-render denne gruppen sin autocomplete
+  rerenderTeacherAc(si, gi);
+  showToast(displayName + ' lagt til');
+}
+
+async function removeTeacherTag(si, gi, nameToRemove) {
+  const group = classSubjects[selectedClassId][si].groups[gi];
+  const names = parseTeacherNames(group.teachers);
+  const filtered = names.filter(n => n !== nameToRemove);
+  group.teachers = filtered.join(', ');
+
+  clearTimeout(groupSaveTimer);
+  await DataService.setSubjects(selectedClassId, classSubjects[selectedClassId]);
+
+  // Sjekk om læreren fortsatt finnes i andre fag/grupper i denne klassen
+  await autoUnassignIfNotInClass(nameToRemove, selectedClassId);
+
+  rerenderTeacherAc(si, gi);
+}
+
+// Fjern klassetildeling hvis læreren ikke lenger er i noen fag/grupper i klassen
+async function autoUnassignIfNotInClass(displayName, classId) {
+  const subjects = classSubjects[classId] || [];
+  const nameLower = displayName.toLowerCase();
+
+  // Sjekk alle fag og grupper i klassen
+  for (const subj of subjects) {
+    for (const g of (subj.groups || [])) {
+      const names = parseTeacherNames(g.teachers).map(n => n.toLowerCase());
+      if (names.includes(nameLower)) {
+        // Læreren finnes fortsatt i et annet fag/gruppe — ikke fjern tildeling
+        return;
+      }
+    }
+  }
+
+  // Læreren er ikke i noen fag i denne klassen — finn brukernavn og fjern tildeling
+  const teacher = allUsers.find(u =>
+    u.role === 'teacher' && (u.displayName || u.username).toLowerCase() === nameLower
+  );
+  if (teacher) {
+    await DataService.setTeacherAssignment(teacher.username, classId, false);
+    showToast((teacher.displayName || teacher.username) + ' fjernet fra klassen');
+  }
+}
+
+function rerenderTeacherAc(si, gi) {
+  const wrapper = document.getElementById('tac-' + si + '-' + gi);
+  if (!wrapper) return;
+  const group = classSubjects[selectedClassId][si].groups[gi];
+  const tagsContainer = wrapper.querySelector('.teacher-ac-tags');
+  const input = tagsContainer.querySelector('.teacher-ac-input');
+
+  // Fjern alle eksisterende tags (behold input)
+  tagsContainer.querySelectorAll('.teacher-ac-tag').forEach(t => t.remove());
+  // Sett inn nye tags før input
+  const tagsHtml = renderTeacherTags(group.teachers, si, gi);
+  input.insertAdjacentHTML('beforebegin', tagsHtml);
+  input.value = '';
+  input.placeholder = group.teachers ? '' : 'Søk etter lærer...';
+
+  // Lukk dropdown
+  closeAllTeacherDropdowns();
+  input.focus();
+}
+
+async function autoAssignClassToTeacher(username, classId) {
+  // Sjekk om læreren allerede har denne klassen tildelt
+  const assignments = await DataService.getTeacherAssignments(username);
+  if (!assignments.includes(classId)) {
+    await DataService.setTeacherAssignment(username, classId, true);
+    console.log('Auto-tildelt klasse', classId, 'til lærer', username);
+  }
+}
+
+function closeAllTeacherDropdowns() {
+  document.querySelectorAll('.teacher-ac-dropdown').forEach(dd => {
+    dd.classList.remove('open');
+  });
+  acHighlightIdx = -1;
+}
+
+// Lukk dropdown når man klikker utenfor
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.teacher-ac-wrapper')) {
+    closeAllTeacherDropdowns();
+  }
+});
+
+function renderColorPicker() {
+  const container = document.getElementById('color-picker');
+  container.innerHTML = SUBJECT_COLORS.map((c, i) => {
+    const sel = i === selectedColorIdx ? 'selected' : '';
+    return `<div class="color-swatch ${sel}" style="background:${c.bg}" title="${c.name}" onclick="selectColor(${i})"></div>`;
+  }).join('');
+}
+
+function selectColor(idx) {
+  selectedColorIdx = idx;
+  renderColorPicker();
+}
+
+function renderQuickSubjectChips() {
+  const container = document.getElementById('quick-subject-chips');
+  const currentSubjects = classSubjects[selectedClassId] || [];
+  container.innerHTML = QUICK_SUBJECTS.map(preset => {
+    const exists = currentSubjects.some(s => s.name.toLowerCase() === preset.name.toLowerCase());
+    const color = SUBJECT_COLORS[preset.colorIdx];
+    return `<button class="quick-chip ${exists ? 'added' : ''}"
+      style="border-color:${color.bg};${exists ? '' : 'background:' + color.bg + '33'}"
+      onclick="addSubjectByPreset(${JSON.stringify(preset).replace(/"/g, '&quot;')})">${preset.name}</button>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+//  BRUKERE
+// ═══════════════════════════════════════
+let allUsers = [];
+let csvParsedData = null;
+
+async function renderUsersPanel() {
+  try {
+    allUsers = await DataService.getUsers();
+    console.log('Brukere hentet fra Firebase:', allUsers.length);
+
+    // Hent klassetildelinger for elever, så vi kan gruppere dem
+    for (const user of allUsers) {
+      if (user.role === 'student') {
+        try {
+          await DataService.migrateStudentAssignment(user.username);
+          const classIds = await DataService.getStudentAssignments(user.username);
+          user._assignedClassIds = classIds;
+          if (classIds.length > 0) {
+            const classNames = classIds.map(id => {
+              const cls = classes.find(c => c.id === id);
+              return cls ? cls.name : null;
+            }).filter(Boolean);
+            user._assignedClassName = classNames[0] || null;
+            user._assignedClassNames = classNames;
+          } else {
+            user._assignedClassName = null;
+            user._assignedClassNames = [];
+          }
+        } catch (e) {
+          console.warn('Kunne ikke hente klassetildeling for', user.username, e);
+          user._assignedClassName = null;
+          user._assignedClassNames = [];
+          user._assignedClassIds = [];
+        }
+      }
+    }
+
+    renderUserList();
+  } catch (err) {
+    console.error('Feil i renderUsersPanel:', err);
+    document.getElementById('user-list').innerHTML = '<div class="empty-state"><h3>Feil ved lasting</h3><p>Kunne ikke hente brukere. Pr&oslash;v igjen.</p></div>';
+  }
+}
+
+let userGroups = {}; // Lagre gruppedata for oppslag
+let activeGroupId = null; // Husk valgt gruppe
+
+function renderUserList() {
+  const container = document.getElementById('user-list');
+  if (allUsers.length === 0) {
+    container.innerHTML = '<div class="empty-state"><h3>Ingen brukere</h3><p>Legg til brukere ovenfor eller importer fra CSV.</p></div>';
+    return;
+  }
+
+  // Finn duplikat-brukernavn for markering
+  const usernameCounts = {};
+  allUsers.forEach(u => {
+    const key = u.username.toLowerCase();
+    usernameCounts[key] = (usernameCounts[key] || 0) + 1;
+  });
+
+  const teachers = allUsers.filter(u => u.role === 'teacher').sort((a, b) =>
+    (a.displayName || a.username).localeCompare(b.displayName || b.username, 'no')
+  );
+  const students = allUsers.filter(u => u.role === 'student').sort((a, b) =>
+    (a.displayName || a.username).localeCompare(b.displayName || b.username, 'no')
+  );
+
+  // Grupper elever etter tildelt klasse
+  const studentsByClass = {};
+  const unassigned = [];
+  students.forEach(s => {
+    const cn = s._assignedClassName || null;
+    if (cn) {
+      if (!studentsByClass[cn]) studentsByClass[cn] = [];
+      studentsByClass[cn].push(s);
+    } else {
+      unassigned.push(s);
+    }
+  });
+
+  function getClassColor(className) {
+    const cls = classes.find(c => c.name === className);
+    return cls ? cls.color : '#6b7280';
+  }
+
+  // Bygg gruppedata
+  userGroups = {};
+  const groupOrder = [];
+
+  // L\u00e6rere
+  userGroups['teachers'] = {
+    color: '#7c3aed', icon: '\ud83d\udc68\u200d\ud83c\udfeb', title: 'L\u00e6rere',
+    count: teachers.length, users: teachers, usernameCounts,
+    deleteAction: teachers.length > 0 ? 'deleteAllTeachers()' : null,
+    deleteLabel: 'Slett alle l\u00e6rere'
+  };
+  groupOrder.push('teachers');
+
+  // Elever per klasse
+  const classNames = Object.keys(studentsByClass).sort((a, b) => a.localeCompare(b, 'no'));
+  classNames.forEach(cn => {
+    const gid = 'class-' + cn.replace(/\s/g, '_');
+    const list = studentsByClass[cn].sort((a, b) =>
+      (a.displayName || a.username).localeCompare(b.displayName || b.username, 'no')
+    );
+    userGroups[gid] = {
+      color: getClassColor(cn), icon: '\ud83c\udf93', title: 'Elever ' + cn,
+      count: list.length, users: list, usernameCounts,
+      deleteAction: `deleteClassStudents('${esc(cn)}')`,
+      deleteLabel: 'Slett alle i ' + cn
+    };
+    groupOrder.push(gid);
+  });
+
+  // Utildelte
+  if (unassigned.length > 0) {
+    userGroups['unassigned'] = {
+      color: '#9ca3af', icon: '\u2753', title: 'Ikke tildelt',
+      count: unassigned.length, users: unassigned, usernameCounts,
+      deleteAction: null, deleteLabel: null
+    };
+    groupOrder.push('unassigned');
+  }
+
+  // Duplikat-sjekk
+  const dupCount = Object.values(usernameCounts).filter(c => c > 1).reduce((sum, c) => sum + (c - 1), 0);
+
+  // Bygg knapper
+  let html = '<div class="user-group-grid">';
+  groupOrder.forEach(gid => {
+    const g = userGroups[gid];
+    html += `<div class="user-group-btn${activeGroupId === gid ? ' active' : ''}" id="ugb-${gid}" onclick="selectUserGroup('${gid}')">
+      <div class="user-group-btn-stripe" style="background:${g.color}"></div>
+      <span class="user-group-btn-icon">${g.icon}</span>
+      <span class="user-group-btn-title">${g.title}</span>
+      <span class="user-group-btn-count" style="color:${g.color}">${g.count}</span>
+    </div>`;
+  });
+  // Totalantall-badge
+  html += `<div style="display:flex;align-items:center;padding:0.3rem 0.6rem;font-size:0.78rem;color:var(--muted);font-weight:600;">Totalt: ${allUsers.length}</div>`;
+  html += '</div>';
+
+  // Duplikat-advarsel
+  if (dupCount > 0) {
+    html += `<div class="dup-bar" style="margin-bottom:0.5rem;">
+      <strong>\u26a0 ${dupCount} duplikat${dupCount > 1 ? 'er' : ''}</strong>
+      <button class="btn-danger-sm" onclick="removeDuplicateUsers()">Fjern duplikater</button>
+    </div>`;
+  }
+
+  // Detaljfelt
+  html += '<div class="user-detail-panel" id="user-detail-panel"><div class="user-detail-empty">Velg en gruppe ovenfor for \u00e5 se brukere</div></div>';
+
+  container.innerHTML = html;
+
+  // Vis forrige aktive gruppe, eller velg f\u00f8rste
+  if (activeGroupId && userGroups[activeGroupId]) {
+    selectUserGroup(activeGroupId);
+  } else if (groupOrder.length > 0) {
+    selectUserGroup(groupOrder[0]);
+  }
+}
+
+function selectUserGroup(groupId) {
+  // Oppdater aktiv knapp
+  activeGroupId = groupId;
+  document.querySelectorAll('.user-group-btn').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById('ugb-' + groupId);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  // Render detalj
+  const panel = document.getElementById('user-detail-panel');
+  const g = userGroups[groupId];
+  if (!g) { panel.innerHTML = ''; return; }
+
+  let html = '<div class="user-detail-header">';
+  html += `<div class="user-detail-title"><span>${g.icon}</span> ${g.title} <span style="color:var(--muted);font-weight:400;font-size:0.82rem;">(${g.count})</span></div>`;
+  if (g.deleteAction) {
+    html += `<button class="btn-danger-sm" onclick="${g.deleteAction}">${g.deleteLabel}</button>`;
+  }
+  html += '</div>';
+
+  if (g.users.length === 0) {
+    html += '<div class="user-detail-empty">Ingen brukere i denne gruppen</div>';
+  } else {
+    html += renderUserTable(g.users, g.usernameCounts);
+  }
+
+  panel.innerHTML = html;
+}
+
+function renderUserTable(users, usernameCounts) {
+  let html = '<table class="user-table"><thead><tr>';
+  html += '<th>Brukernavn</th><th>Visningsnavn</th><th></th>';
+  html += '</tr></thead><tbody>';
+
+  users.forEach(user => {
+    const isDup = usernameCounts && (usernameCounts[user.username.toLowerCase()] || 0) > 1;
+    const rowClass = isDup ? ' class="dup-row"' : '';
+    const dupBadge = isDup ? ' <span class="dup-badge">Duplikat</span>' : '';
+    html += `<tr${rowClass}>
+      <td><strong>${esc(user.username)}</strong>${dupBadge}</td>
+      <td>${esc(user.displayName || user.username)}</td>
+      <td style="text-align:right">
+        <button class="class-action-btn" onclick="editUser('${user.id}')">Rediger</button>
+        <button class="class-action-btn delete" onclick="deleteUser('${user.id}','${esc(user.displayName || user.username)}')">Slett</button>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  return html;
+}
+
+function toggleAddUser() {
+  const fields = document.getElementById('user-add-fields');
+  fields.classList.toggle('open');
+  if (fields.classList.contains('open')) {
+    document.getElementById('newUserUsername').focus();
+  }
+}
+
+async function addUserManual() {
+  const username = document.getElementById('newUserUsername').value.trim();
+  const displayName = document.getElementById('newUserDisplay').value.trim();
+  const role = document.getElementById('newUserRole').value;
+
+  if (!username) { showToast('Skriv inn brukernavn'); return; }
+
+  // Sjekk duplikat
+  if (allUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+    showToast('Brukernavnet finnes allerede');
+    return;
+  }
+
+  await DataService.addUser({
+    username: username,
+    password: '123',
+    role: role,
+    displayName: displayName || username
+  });
+
+  document.getElementById('newUserUsername').value = '';
+  document.getElementById('newUserDisplay').value = '';
+  showToast('Bruker opprettet');
+  renderUsersPanel();
+}
+
+function editUser(userId) {
+  const user = allUsers.find(u => u.id === userId);
+  if (!user) return;
+
+  const newDisplay = prompt('Nytt visningsnavn:', user.displayName || user.username);
+  if (newDisplay === null) return;
+
+  const newPassword = prompt('Nytt passord (la st\u00e5 tomt for \u00e5 beholde):', '');
+
+  const updates = {};
+  if (newDisplay.trim()) updates.displayName = newDisplay.trim();
+  if (newPassword) updates.password = newPassword;
+
+  if (Object.keys(updates).length > 0) {
+    DataService.updateUser(userId, updates).then(() => {
+      showToast('Bruker oppdatert');
+      renderUsersPanel();
+    });
+  }
+}
+
+function deleteUser(userId, name) {
+  showConfirm('Slett bruker', `Er du sikker p\u00e5 at du vil slette ${name}?`, async () => {
+    await DataService.deleteUser(userId);
+    showToast('Bruker slettet');
+    renderUsersPanel();
+  });
+}
+
+function deleteAllClasses() {
+  if (classes.length === 0) { showToast('Ingen klasser \u00e5 slette'); return; }
+
+  showDoubleConfirm('Slett alle klasser',
+    `Dette sletter alle ${classes.length} klasser, alle fag og alle ukeplaner permanent. Denne handlingen kan ikke angres.`,
+    'SLETT',
+    async () => {
+      try {
+        const updates = {};
+        classes.forEach(cls => {
+          updates['ukeplan/classes/' + cls.id] = null;
+          updates['ukeplan/subjects/' + cls.id] = null;
+          updates['ukeplan/weekplans/' + cls.id] = null;
+          updates['ukeplan/timetables/' + cls.id] = null;
+        });
+        await db.ref().update(updates);
+        classes = [];
+        classSubjects = {};
+        selectedClassId = null;
+        renderClasses();
+        renderQuickClassChips();
+        showToast('Alle klasser slettet');
+      } catch (err) {
+        console.error('Feil ved sletting av klasser:', err);
+        showToast('Feil: ' + err.message);
+      }
+    }
+  );
+}
+
+function deleteAllTeachers() {
+  const teachers = allUsers.filter(u => u.role === 'teacher');
+  if (teachers.length === 0) { showToast('Ingen l\u00e6rere \u00e5 slette'); return; }
+
+  showDoubleConfirm('Slett alle lærere',
+    `Dette sletter alle ${teachers.length} lærere og deres klassetildelinger permanent. Denne handlingen kan ikke angres.`,
+    'SLETT',
+    async () => {
+      try {
+        const updates = {};
+        teachers.forEach(u => {
+          updates['ukeplan/users/' + u.id] = null;
+          updates['ukeplan/teacherAssignments/' + safeKey(u.username)] = null;
+        });
+        await db.ref().update(updates);
+        showToast(`${teachers.length} l\u00e6rere slettet`);
+        renderUsersPanel();
+      } catch (err) {
+        console.error('Feil ved sletting av l\u00e6rere:', err);
+        showToast('Feil: ' + err.message);
+      }
+    }
+  );
+}
+
+function deleteAllStudents() {
+  const students = allUsers.filter(u => u.role === 'student');
+  if (students.length === 0) { showToast('Ingen elever \u00e5 slette'); return; }
+
+  showDoubleConfirm('Slett alle elever',
+    `Dette sletter alle ${students.length} elever og deres klassetildelinger permanent. Denne handlingen kan ikke angres.`,
+    'SLETT',
+    async () => {
+      try {
+        const updates = {};
+        students.forEach(u => {
+          updates['ukeplan/users/' + u.id] = null;
+          updates['ukeplan/studentAssignments/' + safeKey(u.username)] = null;
+        });
+        await db.ref().update(updates);
+        showToast(`${students.length} elever slettet`);
+        renderUsersPanel();
+      } catch (err) {
+        console.error('Feil ved sletting av elever:', err);
+        showToast('Feil: ' + err.message);
+      }
+    }
+  );
+}
+
+function deleteClassStudents(className) {
+  const studentsInClass = allUsers.filter(u =>
+    u.role === 'student' && u._assignedClassName === className
+  );
+  if (studentsInClass.length === 0) { showToast('Ingen elever i klassen'); return; }
+
+  showDoubleConfirm('Slett elever i ' + className,
+    `Dette sletter alle ${studentsInClass.length} elever i ${className} permanent. Denne handlingen kan ikke angres.`,
+    'SLETT',
+    async () => {
+      try {
+        const updates = {};
+        studentsInClass.forEach(u => {
+          updates['ukeplan/users/' + u.id] = null;
+          updates['ukeplan/studentAssignments/' + safeKey(u.username)] = null;
+        });
+        await db.ref().update(updates);
+        showToast(`${studentsInClass.length} elever i ${className} slettet`);
+        renderUsersPanel();
+      } catch (err) {
+        console.error('Feil ved sletting:', err);
+        showToast('Feil ved sletting: ' + err.message);
+      }
+    }
+  );
+}
+
+async function removeDuplicateUsers() {
+  // Finn duplikater - behold f\u00f8rste forekomst, slett resten
+  const seen = {};
+  const toDelete = [];
+
+  allUsers.forEach(u => {
+    const key = u.username.toLowerCase();
+    if (seen[key]) {
+      toDelete.push(u);
+    } else {
+      seen[key] = u;
+    }
+  });
+
+  if (toDelete.length === 0) {
+    showToast('Ingen duplikater \u00e5 fjerne');
+    return;
+  }
+
+  showDoubleConfirm('Fjern duplikater',
+    `Fant ${toDelete.length} duplikat${toDelete.length > 1 ? 'er' : ''}. Første forekomst av hvert brukernavn beholdes. Denne handlingen kan ikke angres.`,
+    'SLETT',
+    async () => {
+      try {
+        const updates = {};
+        toDelete.forEach(u => {
+          updates['ukeplan/users/' + u.id] = null;
+        });
+        await db.ref().update(updates);
+        showToast(`${toDelete.length} duplikat${toDelete.length > 1 ? 'er' : ''} fjernet`);
+        renderUsersPanel();
+      } catch (err) {
+        console.error('Feil ved fjerning av duplikater:', err);
+        showToast('Feil ved fjerning: ' + err.message);
+      }
+    }
+  );
+}
+
+// ─── CSV-import ───
+function handleCSVDrop(event) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('dragover');
+  const file = event.dataTransfer.files[0];
+  if (file) parseCSVFile(file);
+}
+
+function handleCSVSelect(event) {
+  const file = event.target.files[0];
+  if (file) parseCSVFile(file);
+}
+
+function parseCSVFile(file) {
+  // Pr\u00f8v UTF-8 f\u00f8rst, deretter Windows-1252 hvis norske tegn mangler
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    // Sjekk om norske tegn er korrekt dekodet
+    const hasNorwegianChars = /[\u00e6\u00f8\u00e5\u00c6\u00d8\u00c5]/.test(text);
+    const hasGarbled = /\ufffd/.test(text); // replacement character
+    console.log('CSV encoding-sjekk:', { hasNorwegianChars, hasGarbled, firstChars: text.substring(0, 100) });
+
+    if (hasGarbled || (!hasNorwegianChars && text.length > 50)) {
+      // Pr\u00f8v Windows-1252
+      console.log('Pr\u00f8ver Windows-1252 encoding...');
+      const reader2 = new FileReader();
+      reader2.onload = function(e2) {
+        parseCSVText(e2.target.result);
+      };
+      reader2.readAsText(file, 'windows-1252');
+    } else {
+      parseCSVText(text);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSVText(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 1) { showToast('Filen ser tom ut'); return; }
+
+  // Finn delimiter
+  const firstLine = lines[0];
+  let delimiter = ';';
+  if (!firstLine.includes(';') && firstLine.includes('\t')) delimiter = '\t';
+  else if (!firstLine.includes(';') && firstLine.includes(',')) delimiter = ',';
+
+  // Parse kolonnene, fjern trailing tomme kolonner (fra trailing ;)
+  function splitLine(line) {
+    let cols = line.split(delimiter).map(c => c.trim().replace(/['"]/g, ''));
+    // Fjern tomme kolonner fra slutten
+    while (cols.length > 0 && cols[cols.length - 1] === '') cols.pop();
+    return cols;
+  }
+
+  // Sjekk om f\u00f8rste linje er header
+  const firstCols = splitLine(firstLine).map(c => c.toLowerCase());
+  const headerKeywords = ['etternavn','fornavn','navn','e-post','epost','klasse','klassegruppe','rolle','brukernavn','f\u00f8dselsdato','trinn','kontaktl\u00e6rer'];
+  const hasHeader = firstCols.some(c => headerKeywords.includes(c)) ||
+    firstCols.some(c => c.includes('etternavn') || c.includes('fornavn') || c.includes('klasse') || c.includes('trinn'));
+  console.log('CSV header-sjekk:', { firstCols, hasHeader });
+
+  let headers = [];
+  let startRow = 0;
+
+  if (hasHeader) {
+    headers = firstCols;
+    startRow = 1;
+  }
+
+  // Parse alle rader
+  const rows = [];
+  for (let i = startRow; i < lines.length; i++) {
+    const cols = splitLine(lines[i]);
+    if (cols.length >= 2 && cols[0]) {
+      rows.push(cols);
+    }
+  }
+
+  if (rows.length === 0) { showToast('Ingen data funnet i filen'); return; }
+
+  // Detekter filtype automatisk
+  csvParsedData = detectAndParseCSV(headers, rows);
+  if (!csvParsedData || csvParsedData.length === 0) {
+    showToast('Ingen gyldige brukere funnet. Sjekk at filen har riktig format.');
+    return;
+  }
+  renderCSVPreview(csvParsedData);
+}
+
+function detectAndParseCSV(headers, rows) {
+  // Sjekk om det er elevfil - s\u00f8k bredere for \u00e5 h\u00e5ndtere encoding-variasjoner
+  const hasKlasseHeader = headers.some(h =>
+    h === 'klassegruppe' || h === 'klasse' || h.includes('klassegruppe') || h.includes('klasse')
+  );
+  const hasTrinnHeader = headers.some(h => h === 'trinn' || h.includes('trinn'));
+  const hasFodselsdatoHeader = headers.some(h => h.includes('dselsdato') || h.includes('dato'));
+  const colELooksLikeClass = rows.length > 0 && rows[0].length >= 5 && /^\d{1,2}[A-Za-z]$/.test(rows[0][4]);
+
+  // Sjekk om det er ansattfil (ingen klassekolonne, har e-post i kolonne F)
+  const colFLooksLikeEmail = rows.length > 0 && rows[0].length >= 6 && rows[0][5] && rows[0][5].includes('@');
+
+  console.log('CSV-deteksjon:', { hasKlasseHeader, hasTrinnHeader, hasFodselsdatoHeader, colELooksLikeClass, colFLooksLikeEmail, headers, headerCount: headers.length });
+
+  if (hasKlasseHeader || hasTrinnHeader || hasFodselsdatoHeader || colELooksLikeClass) {
+    console.log('Detektert som: Elevfil');
+    return parseStudentCSV(headers, rows);
+  } else {
+    console.log('Detektert som: Ansattfil');
+    return parseEmployeeCSV(headers, rows);
+  }
+}
+
+// ─── Elevfil: A=Etternavn, B=Fornavn, E=Klassegruppe ───
+function parseStudentCSV(headers, rows) {
+  // Finn kolonneindeks
+  let lastNameIdx = 0, firstNameIdx = 1, classIdx = 4;
+
+  if (headers.length > 0) {
+    const li = headers.indexOf('etternavn'); if (li >= 0) lastNameIdx = li;
+    const fi = headers.indexOf('fornavn'); if (fi >= 0) firstNameIdx = fi;
+    const ci = headers.indexOf('klassegruppe');
+    if (ci >= 0) classIdx = ci;
+    else { const ci2 = headers.indexOf('klasse'); if (ci2 >= 0) classIdx = ci2; }
+  }
+
+  console.log('parseStudentCSV - kolonner:', { lastNameIdx, firstNameIdx, classIdx });
+  console.log('parseStudentCSV - headers:', headers);
+  if (rows.length > 0) console.log('parseStudentCSV - f\u00f8rste rad:', rows[0]);
+
+  const result = rows.map((cols, i) => {
+    const lastName = cols[lastNameIdx] || '';
+    const firstName = cols[firstNameIdx] || '';
+    const classInfo = (cols.length > classIdx) ? (cols[classIdx] || '') : '';
+
+    if (!lastName || !firstName || !classInfo) {
+      if (i < 3) console.log('parseStudentCSV - hoppper over rad', i, ':', { lastName, firstName, classInfo, colCount: cols.length });
+      return null;
+    }
+
+    const displayName = firstName + ' ' + lastName;
+    // Lag brukernavn fra fornavn.etternavn (kun f\u00f8rste fornavn)
+    const firstPart = firstName.split(' ')[0].toLowerCase()
+      .replace(/\u00e6/g,'ae').replace(/\u00f8/g,'o').replace(/\u00e5/g,'a')
+      .replace(/[^a-z0-9]/g, '');
+    const lastPart = lastName.toLowerCase()
+      .replace(/\u00e6/g,'ae').replace(/\u00f8/g,'o').replace(/\u00e5/g,'a')
+      .replace(/[^a-z0-9-]/g, '');
+    const username = firstPart + '.' + lastPart;
+
+    return {
+      username,
+      displayName,
+      role: 'student',
+      password: '123',
+      classInfo
+    };
+  }).filter(u => u !== null);
+
+  console.log('parseStudentCSV - resultat:', result.length, 'elever parsed');
+  return result;
+}
+
+// ─── Ansattfil: A=Etternavn, B=Fornavn, F=E-postadresse ───
+function parseEmployeeCSV(headers, rows) {
+  let lastNameIdx = 0, firstNameIdx = 1, emailIdx = 5;
+
+  if (headers.length > 0) {
+    const li = headers.indexOf('etternavn'); if (li >= 0) lastNameIdx = li;
+    const fi = headers.indexOf('fornavn'); if (fi >= 0) firstNameIdx = fi;
+    const ei = headers.findIndex(h => h.includes('epost') || h.includes('e-post') || h.includes('email'));
+    if (ei >= 0) emailIdx = ei;
+  }
+
+  return rows.map(cols => {
+    const lastName = cols[lastNameIdx] || '';
+    const firstName = cols[firstNameIdx] || '';
+    const email = (cols[emailIdx] || '').trim();
+
+    // Filtrer bort de som mangler etternavn, fornavn eller e-post
+    if (!lastName || !firstName || !email || !email.includes('@')) return null;
+
+    const displayName = firstName + ' ' + lastName;
+    // Bruk e-postadressen som brukernavn (uten @domene)
+    const username = email.split('@')[0].toLowerCase();
+
+    return {
+      username,
+      displayName,
+      role: 'teacher',
+      password: '123',
+      classInfo: ''
+    };
+  }).filter(u => u !== null);
+}
+
+async function renderCSVPreview(users) {
+  if (!users || users.length === 0) {
+    showToast('Ingen brukere gjenkjent i filen. Sjekk at formatet stemmer.');
+    return;
+  }
+
+  // Hent ferske brukere fra Firebase for presis duplikatsjekk
+  try {
+    allUsers = await DataService.getUsers();
+  } catch (e) {
+    console.warn('Kunne ikke hente ferske brukere for duplikatsjekk:', e);
+  }
+
+  document.getElementById('csv-preview-area').style.display = '';
+
+  const teachers = users.filter(u => u.role === 'teacher');
+  const students = users.filter(u => u.role === 'student');
+
+  // Sjekk duplikater mot eksisterende brukere
+  const existingUsernames = allUsers.map(u => u.username.toLowerCase());
+  const duplicates = users.filter(u => existingUsernames.includes(u.username.toLowerCase()));
+  const newOnly = users.filter(u => !existingUsernames.includes(u.username.toLowerCase()));
+
+  // Sjekk duplikater innad i CSV-filen
+  const csvDups = [];
+  const seenInCSV = {};
+  users.forEach(u => {
+    const key = u.username.toLowerCase();
+    if (seenInCSV[key]) {
+      csvDups.push(u);
+    } else {
+      seenInCSV[key] = true;
+    }
+  });
+
+  const detectedType = teachers.length > students.length ? 'Ansattfil (l\u00e6rere)' : 'Elevfil';
+
+  let html = `<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;flex-wrap:wrap;">
+    <p style="font-size:0.85rem;font-weight:600;">Gjenkjent som: <span style="color:var(--accent)">${detectedType}</span></p>
+    <p style="font-size:0.85rem;font-weight:600;">${users.length} brukere funnet</p>`;
+  if (teachers.length > 0) html += `<span class="count-badge"><span class="role-badge teacher">L\u00e6rer</span> ${teachers.length}</span>`;
+  if (students.length > 0) html += `<span class="count-badge"><span class="role-badge student">Elev</span> ${students.length}</span>`;
+  html += '</div>';
+
+  // Vis duplikatvarsel
+  if (duplicates.length > 0) {
+    html += `<div class="dup-bar">
+      <strong>\u26a0 ${duplicates.length} duplikat${duplicates.length > 1 ? 'er' : ''} funnet</strong>
+      <span>${duplicates.length} brukere finnes allerede i systemet og vil bli hoppet over.</span>
+      <span style="font-weight:700;color:var(--green)">${newOnly.length} nye vil bli importert.</span>
+    </div>`;
+  }
+  if (csvDups.length > 0) {
+    html += `<div class="dup-bar">
+      <strong>\u26a0 ${csvDups.length} duplikat${csvDups.length > 1 ? 'er' : ''} i CSV-filen</strong>
+      <span>Disse forekommer flere ganger i filen og vil kun importeres \u00e9n gang.</span>
+    </div>`;
+  }
+
+  html += '<div class="csv-preview"><table><thead><tr><th>Brukernavn</th><th>Visningsnavn</th><th>Rolle</th><th>Klasse</th><th>Status</th></tr></thead><tbody>';
+
+  users.slice(0, 50).forEach(u => {
+    const roleLabel = u.role === 'teacher' ? 'L\u00e6rer' : 'Elev';
+    const roleBadge = `<span class="role-badge ${u.role}" style="font-size:0.65rem">${roleLabel}</span>`;
+    const isDup = existingUsernames.includes(u.username.toLowerCase());
+    const rowClass = isDup ? ' class="dup-row"' : '';
+    const statusBadge = isDup
+      ? '<span class="dup-badge">Finnes allerede</span>'
+      : '<span style="color:var(--green);font-size:0.72rem;font-weight:700;">Ny</span>';
+    html += `<tr${rowClass}><td>${esc(u.username)}</td><td>${esc(u.displayName)}</td><td>${roleBadge}</td><td>${esc(u.classInfo || '-')}</td><td>${statusBadge}</td></tr>`;
+  });
+
+  if (users.length > 50) {
+    html += `<tr><td colspan="5" style="text-align:center;color:var(--muted)">...og ${users.length - 50} til</td></tr>`;
+  }
+
+  html += '</tbody></table></div>';
+  document.getElementById('csv-preview').innerHTML = html;
+}
+
+async function importCSVUsers() {
+  if (!csvParsedData || csvParsedData.length === 0) return;
+
+  try {
+    // Hent ferske data fra Firebase for \u00e5 sikre korrekt duplikatsjekk
+    const freshUsers = await DataService.getUsers();
+    const existingUsernames = freshUsers.map(u => u.username.toLowerCase());
+
+    // Filtrer bort duplikater mot eksisterende + duplikater innad i CSV
+    const seen = new Set(existingUsernames);
+    const newUsers = [];
+    let skippedExisting = 0;
+    let skippedCSVDup = 0;
+
+    for (const u of csvParsedData) {
+      const key = u.username.toLowerCase();
+      if (existingUsernames.includes(key)) {
+        skippedExisting++;
+      } else if (seen.has(key)) {
+        skippedCSVDup++;
+      } else {
+        seen.add(key);
+        newUsers.push(u);
+      }
+    }
+
+    const totalSkipped = skippedExisting + skippedCSVDup;
+
+    if (newUsers.length === 0) {
+      showToast('Alle brukere finnes allerede');
+      cancelCSVImport();
+      return;
+    }
+
+    console.log('Importerer', newUsers.length, 'brukere (hoppet over:', skippedExisting, 'eksisterende,', skippedCSVDup, 'CSV-duplikater)');
+
+    // Legg til brukere med batch-metoden
+    await DataService.addMultipleUsers(newUsers.map(u => ({
+      username: u.username,
+      password: u.password,
+      role: u.role,
+      displayName: u.displayName
+    })));
+
+    // Opprett manglende klasser automatisk og tildel elever
+    const neededClassNames = [...new Set(
+      newUsers.filter(u => u.role === 'student' && u.classInfo).map(u => u.classInfo)
+    )];
+    let createdClasses = 0;
+    for (const cn of neededClassNames) {
+      if (!classes.find(c => c.name.toLowerCase() === cn.toLowerCase())) {
+        const id = 'cls-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+        const colorIdx = classes.length % CLASS_COLORS.length;
+        const cls = { id, name: cn, color: CLASS_COLORS[colorIdx] };
+        classes.push(cls);
+        classSubjects[id] = [];
+        await DataService.addClass(cls);
+        createdClasses++;
+      }
+    }
+
+    // Sett opp klassetildelinger for elever
+    const studentAssignments = {};
+    for (const user of newUsers) {
+      if (user.role === 'student' && user.classInfo) {
+        const cls = classes.find(c => c.name.toLowerCase() === user.classInfo.toLowerCase());
+        if (cls) {
+          studentAssignments['ukeplan/studentAssignments/' + safeKey(user.username) + '/' + cls.id] = true;
+        }
+      }
+    }
+
+    // Batch-oppdater alle elevtildelinger
+    if (Object.keys(studentAssignments).length > 0) {
+      await db.ref().update(studentAssignments);
+    }
+
+    let msg = `${newUsers.length} brukere importert`;
+    if (createdClasses > 0) msg += `, ${createdClasses} nye klasse${createdClasses > 1 ? 'r' : ''} opprettet`;
+    if (totalSkipped > 0) msg += ` (${totalSkipped} duplikater hoppet over)`;
+    showToast(msg);
+    cancelCSVImport();
+    if (createdClasses > 0) {
+      renderClasses();
+      renderQuickClassChips();
+    }
+    renderUsersPanel();
+  } catch (err) {
+    console.error('Feil ved import:', err);
+    showToast('Feil ved import: ' + err.message);
+  }
+}
+
+function cancelCSVImport() {
+  csvParsedData = null;
+  document.getElementById('csv-preview-area').style.display = 'none';
+  document.getElementById('csv-preview').innerHTML = '';
+  document.getElementById('csv-file').value = '';
+}
+
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+//  TILDELINGER
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+let currentAssignView = 'teacher';
+
+function switchAssignView(view) {
+  currentAssignView = view;
+  document.querySelectorAll('.assign-toggle-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', (i === 0 && view === 'teacher') || (i === 1 && view === 'student'));
+  });
+  document.getElementById('assign-teacher-view').classList.toggle('active', view === 'teacher');
+  document.getElementById('assign-student-view').classList.toggle('active', view === 'student');
+
+  // Lazy-load elevvisningen f\u00f8rste gang
+  if (view === 'student' && !studentAssignmentsLoaded) {
+    renderStudentAssignments();
+  }
+}
+
+let studentAssignmentsLoaded = false;
+
+async function renderAssignments() {
+  allUsers = await DataService.getUsers();
+  studentAssignmentsLoaded = false;
+  await renderTeacherAssignments();
+  if (currentAssignView === 'student') {
+    await renderStudentAssignments();
+  }
+}
+
+async function renderTeacherAssignments() {
+  const teachers = allUsers.filter(u => u.role === 'teacher').sort((a, b) =>
+    (a.displayName || a.username).localeCompare(b.displayName || b.username, 'no')
+  );
+  const container = document.getElementById('teacher-assignments');
+
+  if (classes.length === 0) {
+    container.innerHTML = '<div class="empty-state"><h3>Ingen klasser</h3><p>Opprett klasser f\u00f8rst.</p></div>';
+    return;
+  }
+  if (teachers.length === 0) {
+    container.innerHTML = '<div class="empty-state"><h3>Ingen l\u00e6rere</h3><p>Legg til l\u00e6rere i Brukere-fanen f\u00f8rst.</p></div>';
+    return;
+  }
+
+  let html = '<div class="teacher-grid">';
+  for (const teacher of teachers) {
+    const assignments = await DataService.getTeacherAssignments(teacher.username);
+    html += `<div class="teacher-card" data-teacher-name="${esc((teacher.displayName || teacher.username).toLowerCase())}">
+      <div class="teacher-card-name" title="${esc(teacher.displayName || teacher.username)}">${esc(teacher.displayName || teacher.username)}</div>
+      <div class="teacher-card-classes">`;
+    classes.forEach(cls => {
+      const isActive = assignments.includes(cls.id);
+      const style = isActive
+        ? `background:${cls.color};border-color:${cls.color};color:white;`
+        : '';
+      html += `<button class="class-toggle-btn ${isActive ? 'active' : ''}" style="${style}"
+        onclick="toggleTeacherClass('${esc(teacher.username)}','${cls.id}',${!isActive})" title="${isActive ? 'Fjern' : 'Tildel'} ${esc(cls.name)}">${esc(cls.name)}</button>`;
+    });
+    html += '</div></div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+
+  // Tøm søkefeltet ved ny rendering
+  const searchInput = document.getElementById('teacher-search');
+  if (searchInput) searchInput.value = '';
+}
+
+function filterTeacherCards(query) {
+  const q = query.toLowerCase().trim();
+  const cards = document.querySelectorAll('#teacher-assignments .teacher-card');
+  cards.forEach(card => {
+    const name = card.getAttribute('data-teacher-name') || '';
+    card.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+
+async function renderStudentAssignments() {
+  const students = allUsers.filter(u => u.role === 'student').sort((a, b) =>
+    (a.displayName || a.username).localeCompare(b.displayName || b.username, 'no')
+  );
+  const container = document.getElementById('student-assignments');
+
+  if (classes.length === 0) {
+    container.innerHTML = '<div class="empty-state"><h3>Ingen klasser</h3><p>Opprett klasser først.</p></div>';
+    return;
+  }
+  if (students.length === 0) {
+    container.innerHTML = '<div class="empty-state"><h3>Ingen elever</h3><p>Legg til elever i Brukere-fanen først.</p></div>';
+    return;
+  }
+
+  // Hent tildelinger for alle elever og migrer gammelt format
+  for (const student of students) {
+    await DataService.migrateStudentAssignment(student.username);
+    student._assignedClassIds = await DataService.getStudentAssignments(student.username);
+  }
+
+  // Grupper elever etter klasse (en elev kan være i flere grupper)
+  const byClass = {};
+  const unassigned = [];
+
+  for (const student of students) {
+    if (student._assignedClassIds.length === 0) {
+      unassigned.push(student);
+    } else {
+      student._assignedClassIds.forEach(classId => {
+        if (!byClass[classId]) byClass[classId] = [];
+        byClass[classId].push(student);
+      });
+    }
+  }
+
+  let html = '';
+
+  // Utildelte først
+  if (unassigned.length > 0) {
+    html += `<div class="student-class-section open" id="sa-unassigned">
+      <div class="student-class-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="class-dot" style="background:var(--muted)"></span>
+        <h3 style="color:var(--muted)">Ikke tildelt klasse</h3>
+        <span class="class-count">${unassigned.length} elev${unassigned.length !== 1 ? 'er' : ''}</span>
+        <span class="student-class-chev">▾</span>
+      </div>
+      <div class="student-class-body">
+        <div class="student-assign-list">`;
+    unassigned.forEach(s => { html += renderStudentRow(s); });
+    html += `</div></div></div>`;
+  }
+
+  // Sorterte klasser: høyeste trinn først (10, 9, 8), deretter bokstav (A, B, C)
+  const sortedClasses = classes.slice().sort((a, b) => {
+    const numA = parseInt(a.name.match(/\d+/)?.[0]) || 0;
+    const numB = parseInt(b.name.match(/\d+/)?.[0]) || 0;
+    if (numA !== numB) return numB - numA;
+    return a.name.localeCompare(b.name, 'no');
+  });
+
+  sortedClasses.forEach(cls => {
+    const classStudents = (byClass[cls.id] || []).sort((a, b) =>
+      (a.displayName || a.username).localeCompare(b.displayName || b.username, 'no')
+    );
+    const count = classStudents.length;
+    html += `<div class="student-class-section" id="sa-${cls.id}">
+      <div class="student-class-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="class-dot" style="background:${cls.color}"></span>
+        <h3 style="color:${cls.color}">${esc(cls.name)}</h3>
+        <span class="class-count">${count} elev${count !== 1 ? 'er' : ''}</span>
+        <span class="student-class-chev">▾</span>
+      </div>
+      <div class="student-class-body">
+        <div class="student-assign-list">`;
+    if (count === 0) {
+      html += '<div style="padding:0.6rem 0.75rem;color:var(--muted);font-size:0.82rem;font-style:italic;">Ingen elever tildelt</div>';
+    }
+    classStudents.forEach(s => { html += renderStudentRow(s); });
+    html += `</div></div></div>`;
+  });
+
+  container.innerHTML = html;
+  studentAssignmentsLoaded = true;
+}
+
+function renderStudentRow(student) {
+  const fullName = student.displayName || student.username;
+  const safeUser = esc(student.username);
+
+  let html = `<div class="student-assign-row">
+    <div class="student-assign-name" title="${esc(fullName)}">${esc(fullName)}</div>
+    <div class="student-assign-classes">`;
+
+  classes.forEach(cls => {
+    const isActive = student._assignedClassIds.includes(cls.id);
+    html += `<button class="class-toggle-btn${isActive ? ' active' : ''}"
+      style="${isActive ? 'background:' + cls.color + ';border-color:' + cls.color + ';color:white;' : ''}"
+      data-username="${safeUser}" data-classid="${cls.id}" data-active="${isActive}"
+      onclick="toggleStudentClass(this)"
+      title="${isActive ? 'Fjern' : 'Tildel'} ${esc(cls.name)}">${esc(cls.name)}</button>`;
+  });
+
+  html += '</div></div>';
+  return html;
+}
+
+async function toggleStudentClass(btn) {
+  const username = btn.dataset.username;
+  const classId = btn.dataset.classid;
+  const wasActive = btn.dataset.active === 'true';
+  const nowActive = !wasActive;
+
+  await DataService.setStudentAssignment(username, classId, nowActive);
+
+  // Oppdater knappen direkte uten full re-render
+  btn.dataset.active = String(nowActive);
+  const cls = classes.find(c => c.id === classId);
+  if (nowActive && cls) {
+    btn.classList.add('active');
+    btn.style.background = cls.color;
+    btn.style.borderColor = cls.color;
+    btn.style.color = 'white';
+    btn.title = 'Fjern ' + cls.name;
+  } else {
+    btn.classList.remove('active');
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+    btn.title = 'Tildel ' + (cls ? cls.name : '');
+  }
+
+  // Oppdater elev-antall i seksjonens overskrift
+  updateStudentClassCounts();
+
+  showToast(nowActive ? 'Klasse tildelt' : 'Klasse fjernet');
+}
+
+function updateStudentClassCounts() {
+  // Tell opp elever per klasse fra alle synlige rader
+  const rows = document.querySelectorAll('.student-assign-row');
+  const counts = {};
+  let unassignedCount = 0;
+
+  rows.forEach(row => {
+    const buttons = row.querySelectorAll('.class-toggle-btn');
+    let hasAny = false;
+    buttons.forEach(b => {
+      if (b.dataset.active === 'true') {
+        counts[b.dataset.classid] = (counts[b.dataset.classid] || 0) + 1;
+        hasAny = true;
+      }
+    });
+    if (!hasAny) unassignedCount++;
+  });
+
+  // Oppdater overskriftene
+  classes.forEach(cls => {
+    const section = document.getElementById('sa-' + cls.id);
+    if (!section) return;
+    const countEl = section.querySelector('.class-count');
+    const n = counts[cls.id] || 0;
+    if (countEl) countEl.textContent = n + ' elev' + (n !== 1 ? 'er' : '');
+  });
+
+  const unSection = document.getElementById('sa-unassigned');
+  if (unSection) {
+    const countEl = unSection.querySelector('.class-count');
+    if (countEl) countEl.textContent = unassignedCount + ' elev' + (unassignedCount !== 1 ? 'er' : '');
+  }
+}
+
+async function toggleTeacherClass(username, classId, assign) {
+  await DataService.setTeacherAssignment(username, classId, assign);
+  // Oppdater kun l\u00e6rervisningen uten \u00e5 laste alt p\u00e5 nytt
+  allUsers = await DataService.getUsers();
+  renderTeacherAssignments();
+  showToast(assign ? 'Klasse tildelt' : 'Tildeling fjernet');
+}
+
+// ═══════════════════════════════════════
+//  TIMEPLAN
+// ═══════════════════════════════════════
+
+async function renderTimetablePanel() {
+  if (classes.length === 0) {
+    document.getElementById('tt-no-classes').style.display = '';
+    document.getElementById('tt-content').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('tt-no-classes').style.display = 'none';
+  document.getElementById('tt-content').style.display = '';
+
+  if (!selectedTTClassId || !classes.find(c => c.id === selectedTTClassId)) {
+    selectedTTClassId = classes[0].id;
+  }
+
+  renderTTClassSelector();
+  renderTTCopyPanel();
+  await loadAndRenderTimetable();
+}
+
+function renderTTCopyPanel() {
+  const panel = document.getElementById('tt-copy-panel');
+  const otherClasses = classes.filter(c => c.id !== selectedTTClassId);
+  if (otherClasses.length === 0) {
+    panel.innerHTML = '';
+    return;
+  }
+  let html = '<div class="tt-copy-panel">';
+  html += '<label>Kopier fra:</label>';
+  html += '<select id="tt-copy-source">';
+  otherClasses.forEach(cls => {
+    html += `<option value="${cls.id}">${esc(cls.name)}</option>`;
+  });
+  html += '</select>';
+  html += '<button class="tt-copy-time" onclick="copyTimetableFrom(false)" title="Kopier kun klokkeslett">Kun tider</button>';
+  html += '<button class="tt-copy-all" onclick="copyTimetableFrom(true)" title="Kopier tider, fag og l\u00e6rere">Alt</button>';
+  html += '</div>';
+  panel.innerHTML = html;
+}
+
+function renderTTClassSelector() {
+  const container = document.getElementById('tt-class-selector');
+  container.innerHTML = classes.map(cls => {
+    const active = cls.id === selectedTTClassId ? 'active' : '';
+    return `<button class="class-sel-btn ${active}" onclick="selectTTClass('${cls.id}')">${esc(cls.name)}</button>`;
+  }).join('');
+}
+
+async function selectTTClass(classId) {
+  selectedTTClassId = classId;
+  renderTTClassSelector();
+  renderTTCopyPanel();
+  await loadAndRenderTimetable();
+}
+
+async function loadAndRenderTimetable() {
+  try {
+    timetableRows = await DataService.getTimetable(selectedTTClassId);
+  } catch (e) {
+    console.error('Feil ved lasting av timeplan:', e);
+    timetableRows = [];
+  }
+  renderTimetable();
+}
+
+// Bakoverkompatibilitet: konverter gammelt slot-format til entries-array
+function slotEntries(slot) {
+  if (slot.entries) return slot.entries;
+  if (slot.subjectName) return [{ subjectName: slot.subjectName, teacher: slot.teacher || '' }];
+  return [];
+}
+
+function renderTimetable() {
+  const subjects = classSubjects[selectedTTClassId] || [];
+  const teachers = allUsers.filter(u => u.role === 'teacher').sort((a, b) =>
+    (a.displayName || a.username).localeCompare(b.displayName || b.username, 'no')
+  );
+  const area = document.getElementById('tt-table-area');
+  const addBtn = document.getElementById('tt-add-row-btn');
+
+  if (subjects.length === 0) {
+    document.getElementById('tt-no-subjects').style.display = '';
+    area.innerHTML = '';
+    addBtn.style.display = 'none';
+    return;
+  }
+  document.getElementById('tt-no-subjects').style.display = 'none';
+  addBtn.style.display = '';
+
+  if (timetableRows.length === 0) {
+    area.innerHTML = '<div class="empty-state fade-in"><h3>Ingen timer lagt til</h3><p>Klikk \u00abLegg til rad\u00bb for \u00e5 starte.</p></div>';
+    return;
+  }
+
+  let html = '<table class="tt-table"><thead><tr>';
+  TT_DAYS.forEach(d => { html += `<th>${d}</th>`; });
+  html += '<th></th></tr></thead><tbody>';
+
+  timetableRows.forEach((row, ri) => {
+    html += '<tr>';
+
+    TT_DAYS.forEach((day, di) => {
+      const slot = (row.slots && row.slots[day]) || {};
+      const entries = slotEntries(slot);
+      const timeFrom = slot.timeFrom || '';
+      const timeTo = slot.timeTo || '';
+
+      // Bakgrunnsfarge fra f\u00f8rste fag
+      let bgStyle = '';
+      if (entries.length > 0 && entries[0].subjectName) {
+        const subj = subjects.find(s => s.name === entries[0].subjectName);
+        if (subj) {
+          const color = SUBJECT_COLORS[subj.colorIdx] || SUBJECT_COLORS[0];
+          bgStyle = `background:${color.bg}40;`;
+        }
+      }
+
+      html += `<td><div class="tt-day-cell" style="${bgStyle}">`;
+
+      // Klokkeslett fra-til
+      const prevDay = di > 0 ? TT_DAYS[di - 1] : null;
+      const copyBtn = prevDay
+        ? `<button class="tt-copy-btn" onclick="copyTTTimeFromPrev(${ri},'${day}','${prevDay}')" title="Kopier tid fra ${prevDay}">\u2190</button>`
+        : '';
+      html += `<div class="tt-time-row">
+        <input type="time" class="tt-time-input" value="${esc(timeFrom)}"
+          onchange="updateTTSlot(${ri},'${day}','timeFrom',this.value)">
+        <span class="tt-time-sep">\u2013</span>
+        <input type="time" class="tt-time-input" value="${esc(timeTo)}"
+          onchange="updateTTSlot(${ri},'${day}','timeTo',this.value)">
+        ${copyBtn}
+      </div>`;
+
+      // Entries (fag + l\u00e6rer par)
+      const entryList = entries.length > 0 ? entries : [{ subjectName: '', teacher: '' }];
+      entryList.forEach((entry, ei) => {
+        const entryBg = entry.subjectName
+          ? (() => { const s = subjects.find(x => x.name === entry.subjectName); return s ? SUBJECT_COLORS[s.colorIdx] || SUBJECT_COLORS[0] : null; })()
+          : null;
+        const entryStyle = entryBg ? `background:${entryBg.bg};` : '';
+
+        html += `<div class="tt-entry-row" style="${entryStyle}">`;
+        // Fag-dropdown
+        html += `<select onchange="updateTTEntry(${ri},'${day}',${ei},'subjectName',this.value)">`;
+        html += '<option value="">\u2013 Fag \u2013</option>';
+        subjects.forEach(s => {
+          const selected = s.name === entry.subjectName ? 'selected' : '';
+          html += `<option value="${esc(s.name)}" ${selected}>${esc(s.name)}</option>`;
+        });
+        html += '</select>';
+
+        // L\u00e6rer-dropdown
+        html += `<select onchange="updateTTEntry(${ri},'${day}',${ei},'teacher',this.value)">`;
+        html += '<option value="">\u2013 L\u00e6rer \u2013</option>';
+        teachers.forEach(t => {
+          const dn = t.displayName || t.username;
+          const selected = dn === entry.teacher ? 'selected' : '';
+          html += `<option value="${esc(dn)}" ${selected}>${esc(dn)}</option>`;
+        });
+        html += '</select>';
+
+        // Slett entry-knapp (bare vis hvis mer enn 1 entry)
+        if (entryList.length > 1) {
+          html += `<button class="tt-entry-del" onclick="removeTTEntry(${ri},'${day}',${ei})" title="Fjern fag">&times;</button>`;
+        }
+        html += '</div>';
+      });
+
+      // Legg til fag-knapp
+      html += `<button class="tt-add-entry-btn" onclick="addTTEntry(${ri},'${day}')" title="Legg til fag">+ Fag</button>`;
+
+      html += '</div></td>';
+    });
+
+    // Slett-knapp
+    html += `<td><button class="tt-del-btn" onclick="removeTimetableRow(${ri})" title="Slett rad">&times;</button></td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  area.innerHTML = html;
+}
+
+function addTimetableRow() {
+  timetableRows.push({ slots: {} });
+  renderTimetable();
+  saveTimetableDebounced();
+}
+
+function removeTimetableRow(ri) {
+  timetableRows.splice(ri, 1);
+  renderTimetable();
+  saveTimetableDebounced();
+}
+
+// Oppdater klokkeslett paa slot-nivaa (timeFrom/timeTo)
+function updateTTSlot(ri, day, field, value) {
+  if (!timetableRows[ri].slots) timetableRows[ri].slots = {};
+  if (!timetableRows[ri].slots[day]) timetableRows[ri].slots[day] = {};
+  timetableRows[ri].slots[day][field] = value;
+
+  // Auto-fyll slutt-tid (+1 time) naar starttid settes og slutt-tid er tom
+  if (field === 'timeFrom' && value && !timetableRows[ri].slots[day].timeTo) {
+    const [h, m] = value.split(':').map(Number);
+    const endH = (h + 1) % 24;
+    timetableRows[ri].slots[day].timeTo = String(endH).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+    renderTimetable();
+  }
+
+  saveTimetableDebounced();
+}
+
+// Oppdater en entry (fag/laerer) i et slot
+function updateTTEntry(ri, day, ei, field, value) {
+  if (!timetableRows[ri].slots) timetableRows[ri].slots = {};
+  if (!timetableRows[ri].slots[day]) timetableRows[ri].slots[day] = {};
+  const slot = timetableRows[ri].slots[day];
+
+  // Migrer gammelt format til entries-array
+  if (!slot.entries) {
+    if (slot.subjectName) {
+      slot.entries = [{ subjectName: slot.subjectName, teacher: slot.teacher || '' }];
+    } else {
+      slot.entries = [{ subjectName: '', teacher: '' }];
+    }
+    delete slot.subjectName;
+    delete slot.teacher;
+  }
+
+  if (!slot.entries[ei]) slot.entries[ei] = { subjectName: '', teacher: '' };
+  slot.entries[ei][field] = value;
+
+  if (field === 'subjectName') renderTimetable();
+  saveTimetableDebounced();
+}
+
+// Legg til ny fag/laerer-entry i et slot
+function addTTEntry(ri, day) {
+  if (!timetableRows[ri].slots) timetableRows[ri].slots = {};
+  if (!timetableRows[ri].slots[day]) timetableRows[ri].slots[day] = {};
+  const slot = timetableRows[ri].slots[day];
+
+  // Migrer gammelt format
+  if (!slot.entries) {
+    if (slot.subjectName) {
+      slot.entries = [{ subjectName: slot.subjectName, teacher: slot.teacher || '' }];
+    } else {
+      slot.entries = [{ subjectName: '', teacher: '' }];
+    }
+    delete slot.subjectName;
+    delete slot.teacher;
+  }
+
+  slot.entries.push({ subjectName: '', teacher: '' });
+  renderTimetable();
+  saveTimetableDebounced();
+}
+
+// Fjern en entry fra et slot
+function removeTTEntry(ri, day, ei) {
+  const slot = timetableRows[ri].slots[day];
+  if (!slot || !slot.entries) return;
+  slot.entries.splice(ei, 1);
+  if (slot.entries.length === 0) slot.entries.push({ subjectName: '', teacher: '' });
+  renderTimetable();
+  saveTimetableDebounced();
+}
+
+function copyTTTimeFromPrev(ri, day, prevDay) {
+  const prevSlot = (timetableRows[ri].slots && timetableRows[ri].slots[prevDay]) || {};
+  if (!prevSlot.timeFrom && !prevSlot.timeTo) return;
+  if (!timetableRows[ri].slots) timetableRows[ri].slots = {};
+  if (!timetableRows[ri].slots[day]) timetableRows[ri].slots[day] = {};
+  timetableRows[ri].slots[day].timeFrom = prevSlot.timeFrom || '';
+  timetableRows[ri].slots[day].timeTo = prevSlot.timeTo || '';
+  renderTimetable();
+  saveTimetableDebounced();
+}
+
+function saveTimetableDebounced() {
+  clearTimeout(ttSaveTimer);
+  ttSaveTimer = setTimeout(async () => {
+    try {
+      await DataService.saveTimetable(selectedTTClassId, timetableRows);
+      showToast('Timeplan lagret');
+    } catch (e) {
+      console.error('Feil ved lagring av timeplan:', e);
+      showToast('Feil ved lagring');
+    }
+  }, 500);
+}
+
+async function copyTimetableFrom(includeSubjects) {
+  const sourceId = document.getElementById('tt-copy-source').value;
+  if (!sourceId) return;
+  const sourceCls = classes.find(c => c.id === sourceId);
+  const label = includeSubjects ? 'tider, fag og l\u00e6rere' : 'kun tider';
+  const msg = `Kopiere ${label} fra ${sourceCls ? sourceCls.name : sourceId}? Dette erstatter gjeldende timeplan.`;
+  showConfirm('Kopier timeplan', msg, async () => {
+    try {
+      const sourceRows = await DataService.getTimetable(sourceId);
+      if (!sourceRows.length) {
+        showToast('Ingen timeplan \u00e5 kopiere');
+        return;
+      }
+      if (includeSubjects) {
+        timetableRows = JSON.parse(JSON.stringify(sourceRows));
+      } else {
+        // Kopier kun tider, fjern fag og l\u00e6rer
+        timetableRows = sourceRows.map(row => {
+          const newSlots = {};
+          TT_DAYS.forEach(day => {
+            const slot = (row.slots && row.slots[day]) || {};
+            if (slot.timeFrom || slot.timeTo) {
+              newSlots[day] = { timeFrom: slot.timeFrom || '', timeTo: slot.timeTo || '' };
+            }
+          });
+          return { slots: newSlots };
+        });
+      }
+      await DataService.saveTimetable(selectedTTClassId, timetableRows);
+      renderTimetable();
+      showToast('Timeplan kopiert');
+    } catch (e) {
+      console.error('Feil ved kopiering:', e);
+      showToast('Feil ved kopiering');
+    }
+  }, 'Kopier');
+}
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+function esc(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function showConfirm(title, message, onConfirm, okLabel) {
+  const btnLabel = okLabel || 'Slett';
+  const btnClass = okLabel ? 'btn-primary' : 'btn-danger';
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-overlay';
+  overlay.innerHTML = `<div class="confirm-box">
+    <h3>${title}</h3>
+    <p>${message}</p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" id="confirm-cancel">Avbryt</button>
+      <button class="btn ${btnClass}" id="confirm-ok">${btnLabel}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#confirm-cancel').onclick = () => overlay.remove();
+  overlay.querySelector('#confirm-ok').onclick = () => { overlay.remove(); onConfirm(); };
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+}
+
+// Dobbel bekreftelse for massehandlinger — krever at bruker skriver bekreftelsesord
+function showDoubleConfirm(title, message, confirmWord, onConfirm) {
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-overlay';
+  overlay.innerHTML = `<div class="confirm-box">
+    <h3>⚠️ ${title}</h3>
+    <p>${message}</p>
+    <p style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem;">
+      Skriv <strong style="color:#dc2626;user-select:all;">${confirmWord}</strong> for å bekrefte:
+    </p>
+    <input type="text" id="confirm-input" class="field-input" placeholder="Skriv her..." autocomplete="off"
+      style="margin-top:0.35rem;text-align:center;font-weight:700;font-size:0.95rem;">
+    <div class="confirm-actions" style="margin-top:0.75rem;">
+      <button class="btn btn-secondary" id="confirm-cancel">Avbryt</button>
+      <button class="btn btn-danger" id="confirm-ok" disabled style="opacity:0.4;cursor:not-allowed;">Slett permanent</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  const input = overlay.querySelector('#confirm-input');
+  const okBtn = overlay.querySelector('#confirm-ok');
+
+  input.addEventListener('input', () => {
+    const match = input.value.trim().toLowerCase() === confirmWord.toLowerCase();
+    okBtn.disabled = !match;
+    okBtn.style.opacity = match ? '1' : '0.4';
+    okBtn.style.cursor = match ? 'pointer' : 'not-allowed';
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !okBtn.disabled) { overlay.remove(); onConfirm(); }
+  });
+
+  overlay.querySelector('#confirm-cancel').onclick = () => overlay.remove();
+  okBtn.onclick = () => { if (!okBtn.disabled) { overlay.remove(); onConfirm(); } };
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  setTimeout(() => input.focus(), 100);
+}
+</script>
+</body>
+</html>

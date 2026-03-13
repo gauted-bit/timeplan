@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ukeplan - Innlogging</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .login-wrapper {
+    width: 100%;
+    max-width: 420px;
+    padding: 1.5rem;
+  }
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2.5rem 2rem;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+  }
+  .login-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #1e293b, #334155);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+    font-size: 1.8rem;
+  }
+  .login-card h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+  }
+  .login-card .subtitle {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-bottom: 1.5rem;
+  }
+  .login-field {
+    margin-bottom: 1rem;
+    text-align: left;
+  }
+  .login-field label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #4a5568;
+    margin-bottom: 0.35rem;
+  }
+  .login-field input {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    background: #fafaf8;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .login-field input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    background: white;
+  }
+  .login-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+  }
+  .login-btn:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .login-btn:active { transform: translateY(0); }
+  .login-error {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .login-error.show { display: block; }
+  .login-footer {
+    margin-top: 1.5rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="login-wrapper">
+  <div class="login-card fade-in">
+    <div class="login-icon">&#128218;</div>
+    <h1>Ukeplan</h1>
+    <p class="subtitle">Logg inn for &aring; fortsette</p>
+
+    <div class="login-error" id="login-error"></div>
+
+    <form onsubmit="handleLogin(event)">
+      <div class="login-field">
+        <label for="username">Brukernavn</label>
+        <input type="text" id="username" placeholder="Skriv brukernavn..." autocomplete="username" autofocus>
+      </div>
+      <div class="login-field">
+        <label for="password">Passord</label>
+        <input type="password" id="password" placeholder="Skriv passord..." autocomplete="current-password">
+      </div>
+      <button type="submit" class="login-btn">Logg inn</button>
+    </form>
+
+    <div class="login-footer">
+      Tilgang kreves for &aring; bruke ukeplansystemet
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK (trengs for innlogging) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script src="auth.js"></script>
+<script src="data.js"></script>
+<script>
+  // Sjekk om allerede innlogget
+  const existingSession = getSession();
+  if (existingSession) {
+    redirectToRolePage(existingSession.role);
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const errorEl = document.getElementById('login-error');
+    const btn = document.querySelector('.login-btn');
+
+    if (!username || !password) {
+      errorEl.textContent = 'Vennligst fyll inn brukernavn og passord';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    btn.textContent = 'Logger inn...';
+    btn.disabled = true;
+
+    const result = await login(username, password);
+
+    if (result.success) {
+      redirectToRolePage(result.session.role);
+    } else {
+      errorEl.textContent = result.message;
+      errorEl.classList.add('show');
+      document.getElementById('password').value = '';
+      document.getElementById('password').focus();
+      btn.textContent = 'Logg inn';
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ukeplan – Lærer</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+.class-selector {
+  display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1.25rem;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 0.35rem; box-shadow: var(--shadow);
+}
+.class-sel-btn {
+  padding: 0.5rem 1.1rem; border: none; background: transparent;
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; color: var(--muted); border-radius: 8px; transition: all 0.2s;
+}
+.class-sel-btn.active { background: var(--accent); color: white; }
+.class-sel-btn:not(.active):hover { background: #f5f3ef; }
+
+.week-row {
+  display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.week-row label { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+.week-row input, .week-row select {
+  padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: 6px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.85rem; background: var(--card);
+}
+.week-row input[type=number] { width: 70px; }
+
+.info-section {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1rem; margin-bottom: 1rem;
+}
+.info-section h3 { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem; }
+.auto-textarea {
+  width: 100%; min-height: 60px; padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem; line-height: 1.5;
+  resize: none; overflow: hidden; background: #fafaf8; field-sizing: content;
+}
+.auto-textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+/* Fagkort */
+.scard {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 0.75rem; overflow: hidden; transition: box-shadow 0.2s;
+}
+.scard:hover { box-shadow: var(--shadow-md); }
+.scard-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1rem; cursor: pointer; user-select: none; transition: background 0.15s;
+}
+.scard-head:hover { background: #faf9f7; }
+.scard-left { display: flex; align-items: center; gap: 0.6rem; }
+.scard-chev { color: var(--muted); transition: transform 0.25s; font-size: 0.85rem; }
+.scard.open .scard-chev { transform: rotate(180deg); }
+.scard-body { display: none; padding: 0 1rem 1rem; border-top: 1px solid var(--border-lt); }
+.scard.open .scard-body { display: block; }
+
+.stag {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 0.2rem 0.55rem; border-radius: 4px; white-space: nowrap; display: inline-block;
+}
+
+.groups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-top: 0.65rem; }
+@media(max-width:700px){ .groups-grid{grid-template-columns:1fr} }
+
+.group-col {
+  border: 1px solid var(--border-lt); border-radius: var(--radius-sm);
+  padding: 0.85rem; position: relative; transition: box-shadow 0.2s;
+}
+.group-col:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.gc-color-stripe { position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 8px 8px 0 0; }
+.gc-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.65rem; gap: 0.4rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-lt);
+}
+.gc-name { font-size: 0.88rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.gc-teacher { font-size: 0.78rem; color: var(--muted); }
+
+.sfield { margin-bottom: 0.7rem; }
+.slabel {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.76rem; font-weight: 700; color: #4a5568; margin-bottom: 0.35rem; letter-spacing: 0.01em;
+}
+.slabel-icon { font-size: 0.8rem; flex-shrink: 0; }
+.sinput {
+  width: 100%; padding: 0.45rem 0.6rem; border: 1.5px solid #d2d6dc; border-radius: 6px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.84rem; background: #f0f4f8;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.sinput::placeholder { color: #a0aec0; font-weight: 400; }
+.sinput:hover { border-color: #cbd5e0; background: #f7fafc; }
+.sinput:focus { outline: none; border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+textarea.sinput { min-height: 50px; resize: none; overflow: hidden; line-height: 1.45; field-sizing: content; }
+textarea.sinput.hw-field { min-height: 80px; }
+
+.sfield-frist { margin-bottom: 0.4rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-lt); }
+
+.shared-row { margin-top: 0.65rem; padding-top: 0.6rem; border-top: 1px solid var(--border-lt); }
+
+.action-bar {
+  display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border);
+}
+
+/* Kalender */
+.cal-grid {
+  display: grid; grid-template-columns: 60px repeat(5, 1fr); gap: 0; margin-top: 0.5rem;
+  border: 2px solid var(--border); border-radius: var(--radius); overflow: hidden;
+  background: var(--card);
+}
+.cal-grid .cal-header {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--muted);
+  padding: 0.35rem 0.25rem; text-align: center; background: #faf9f7;
+  border-bottom: 2px solid var(--border); border-right: 1px solid var(--border-lt);
+}
+.cal-grid .cal-header:nth-child(6) { border-right: none; }
+.cal-grid textarea {
+  width: 100%; padding: 0.35rem 0.45rem; border: none; border-right: 1px solid var(--border-lt);
+  border-bottom: 1px solid var(--border-lt);
+  font-family: 'DM Sans', sans-serif; font-size: 0.8rem; text-align: left;
+  resize: none; overflow: hidden; min-height: 32px; line-height: 1.4; field-sizing: content;
+  border-radius: 0; background: transparent;
+}
+.cal-grid textarea:focus { outline: none; background: #f0f4ff; }
+.cal-grid textarea:nth-child(6n) { border-right: none; }
+.cal-wk {
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.82rem;
+  color: var(--muted); border-right: 1px solid var(--border-lt); border-bottom: 1px solid var(--border-lt);
+  background: #faf9f7;
+}
+
+/* Timeplan-visning */
+.tp-toggle {
+  display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none;
+  padding: 0.75rem 1rem; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 0.75rem; transition: box-shadow 0.2s;
+}
+.tp-toggle:hover { box-shadow: var(--shadow-md); }
+.tp-toggle h3 { font-size: 1rem; font-weight: 700; color: var(--accent); margin: 0; flex: 1; }
+.tp-toggle .tp-chev { color: var(--muted); transition: transform 0.25s; font-size: 0.85rem; }
+.tp-toggle.open .tp-chev { transform: rotate(180deg); }
+.tp-body { display: none; margin-bottom: 1rem; }
+.tp-toggle.open + .tp-body { display: block; }
+.tp-table {
+  width: 100%; border-collapse: collapse;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+}
+.tp-table th {
+  padding: 0.45rem 0.4rem; text-align: center; font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; color: var(--muted); background: #faf9f7;
+  border-bottom: 2px solid var(--border);
+}
+.tp-table td {
+  padding: 0.3rem; border-bottom: 1px solid var(--border-lt); vertical-align: top; text-align: center;
+}
+.tp-table tr:last-child td { border-bottom: none; }
+.tp-cell {
+  border-radius: 5px; padding: 0.3rem 0.35rem; min-height: 2.2rem;
+}
+.tp-cell-subj { font-size: 0.76rem; font-weight: 700; }
+.tp-cell-time { font-size: 0.68rem; color: rgba(0,0,0,0.55); }
+.tp-cell-teacher { font-size: 0.66rem; color: rgba(0,0,0,0.45); margin-top: 0.1rem; }
+
+@media(max-width:600px) { .tp-table { display: block; overflow-x: auto; } }
+
+.no-access {
+  text-align: center; padding: 4rem 2rem; color: var(--muted);
+}
+.no-access h2 { font-family: 'Fraunces', serif; font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text); }
+
+@media print {
+  body { background: #fff; }
+  .topbar { position: static; }
+  .action-bar, .btn-logout { display: none; }
+  .cal-grid { border: 2px solid #333; }
+  .cal-grid .cal-header { border-bottom: 2px solid #333; border-right: 1px solid #999; background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cal-grid .cal-header:nth-child(6) { border-right: none; }
+  .cal-grid textarea {
+    border-right: 1px solid #999; border-bottom: 1px solid #999;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .cal-grid textarea:nth-child(6n) { border-right: none; }
+  .cal-wk { border-right: 1px solid #999; border-bottom: 1px solid #999; background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div style="color:var(--muted);font-size:0.88rem;">Laster...</div>
+</div>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div>
+      <div class="topbar-title" id="topbar-title">L&aelig;rer &ndash; Ukeplan</div>
+      <div class="topbar-sub" id="school-sub"></div>
+    </div>
+    <div class="topbar-right" id="auth-topbar"></div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="no-access" class="no-access" style="display:none">
+    <h2>Ingen klasser tildelt</h2>
+    <p>Administrator m&aring; tildele deg klasser f&oslash;r du kan redigere ukeplaner.</p>
+  </div>
+
+  <div id="teacher-content" style="display:none">
+    <!-- Klassevelger -->
+    <div class="class-selector" id="class-selector"></div>
+
+    <!-- Uke-innstillinger -->
+    <div class="week-row">
+      <label>Uke</label>
+      <input type="number" id="weekNum" value="1" min="1" max="52" onchange="changeWeek()">
+      <label>Fra</label>
+      <input type="date" id="weekStart" onchange="saveWeekplan()">
+      <label>Til</label>
+      <input type="date" id="weekEnd" onchange="saveWeekplan()">
+      <button class="btn btn-sm btn-secondary" onclick="saveWeekplan()" style="margin-left:0.5rem">Lagre</button>
+    </div>
+
+    <!-- Timeplan-visning -->
+    <div class="tp-toggle" id="tp-toggle" onclick="toggleTimetableView()">
+      <h3>Vis timeplan</h3>
+      <span class="tp-chev">&#9662;</span>
+    </div>
+    <div class="tp-body" id="tp-body">
+      <div id="tp-view-area"></div>
+    </div>
+
+    <!-- Viktig informasjon -->
+    <div class="info-section">
+      <h3>Viktig informasjon</h3>
+      <textarea class="auto-textarea" id="infoText" placeholder="Skriv viktig informasjon her..." oninput="debounceSave()"></textarea>
+    </div>
+
+    <!-- Kalender -->
+    <div class="info-section">
+      <h3>Ukeoversikt fremover</h3>
+      <div class="cal-grid">
+        <div class="cal-header">Uke</div><div class="cal-header">Man</div><div class="cal-header">Tir</div><div class="cal-header">Ons</div><div class="cal-header">Tor</div><div class="cal-header">Fre</div>
+        <div class="cal-wk" id="wk0">1</div><textarea id="c00" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c01" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c02" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c03" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c04" oninput="debounceSave();updateCellColor(this)"></textarea>
+        <div class="cal-wk" id="wk1">2</div><textarea id="c10" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c11" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c12" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c13" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c14" oninput="debounceSave();updateCellColor(this)"></textarea>
+        <div class="cal-wk" id="wk2">3</div><textarea id="c20" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c21" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c22" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c23" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c24" oninput="debounceSave();updateCellColor(this)"></textarea>
+        <div class="cal-wk" id="wk3">4</div><textarea id="c30" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c31" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c32" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c33" oninput="debounceSave();updateCellColor(this)"></textarea><textarea id="c34" oninput="debounceSave();updateCellColor(this)"></textarea>
+      </div>
+    </div>
+
+    <!-- Fag-skjemaer -->
+    <div id="subject-forms"></div>
+
+    <div class="action-bar">
+      <button class="btn btn-green" onclick="saveWeekplan()">Lagre ukeplan</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Lagret!</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script src="auth.js"></script>
+<script src="data.js"></script>
+
+<script>
+const DAYS = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag'];
+const GROUP_COLORS = ['#2563eb','#059669','#ea580c','#7c3aed','#e11d48','#0891b2','#ca8a04','#6d28d9'];
+const SUBJECT_COLORS = [
+  { bg:'#fef08a', fg:'#854d0e' }, { bg:'#fecaca', fg:'#991b1b' },
+  { bg:'#a7f3d0', fg:'#065f46' }, { bg:'#bfdbfe', fg:'#1e3a8a' },
+  { bg:'#f5d0fe', fg:'#86198f' }, { bg:'#86efac', fg:'#14532d' },
+  { bg:'#fed7aa', fg:'#9a3412' }, { bg:'#fbcfe8', fg:'#9d174d' },
+  { bg:'#7dd3fc', fg:'#0c4a6e' }, { bg:'#d8b4fe', fg:'#581c87' },
+  { bg:'#67e8f9', fg:'#164e63' }, { bg:'#d9f99d', fg:'#365314' },
+  { bg:'#d4d4d8', fg:'#3f3f46' }, { bg:'#fde68a', fg:'#92400e' },
+  { bg:'#c7d2fe', fg:'#3730a3' }, { bg:'#fca5a5', fg:'#7f1d1d' },
+  { bg:'#a5f3fc', fg:'#155e75' }, { bg:'#e9d5ff', fg:'#6b21a8' },
+  { bg:'#bef264', fg:'#3f6212' }, { bg:'#fdba74', fg:'#7c2d12' },
+  { bg:'#f0abfc', fg:'#701a75' }, { bg:'#99f6e4', fg:'#134e4a' },
+  { bg:'#fcd34d', fg:'#78350f' },
+];
+
+const session = checkAuth('teacher');
+if (!session) throw new Error('Ikke autorisert');
+
+document.getElementById('auth-topbar').innerHTML = renderAuthTopbar(session);
+
+let assignedClassIds = [];
+let assignedClasses = [];
+let allClasses = [];
+let selectedClassId = null;
+let subjects = [];
+let currentWeek = 1;
+let tpOpen = false;
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+async function init() {
+  try {
+    const schoolName = await DataService.getSchoolName();
+    document.getElementById('school-sub').textContent = schoolName;
+
+    // Hent tildelte klasser
+    assignedClassIds = await DataService.getTeacherAssignments(session.username);
+    allClasses = await DataService.getClasses();
+    assignedClasses = allClasses.filter(c => assignedClassIds.includes(c.id));
+
+    if (assignedClasses.length === 0) {
+      document.getElementById('no-access').style.display = '';
+      document.getElementById('teacher-content').style.display = 'none';
+      hideLoading();
+      return;
+    }
+
+    document.getElementById('no-access').style.display = 'none';
+    document.getElementById('teacher-content').style.display = '';
+
+    selectedClassId = assignedClasses[0].id;
+    initializeWeek();
+    renderClassSelector();
+    await loadClassData();
+    hideLoading();
+  } catch (err) {
+    console.error('Feil ved lasting:', err);
+    hideLoading();
+    showToast('Feil ved lasting av data');
+  }
+}
+
+function hideLoading() {
+  document.getElementById('loading').style.display = 'none';
+}
+
+// ═══════════════════════════════════════
+//  UKE
+// ═══════════════════════════════════════
+function getISOWeekNumber(date) {
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const ys = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil(((d - ys) / 864e5 + 1) / 7);
+}
+
+function initializeWeek() {
+  const nw = getISOWeekNumber(new Date()) + 1;
+  document.getElementById('weekNum').value = nw;
+  currentWeek = nw;
+  document.getElementById('topbar-title').textContent = 'L\u00e6rer \u2013 Uke ' + nw;
+  updateCalendarWeeks();
+  updateWeekDates();
+}
+
+function changeWeek() {
+  currentWeek = parseInt(document.getElementById('weekNum').value);
+  document.getElementById('topbar-title').textContent = 'L\u00e6rer \u2013 Uke ' + currentWeek;
+  updateCalendarWeeks();
+  updateWeekDates();
+  loadWeekplan();
+}
+
+function updateCalendarWeeks() {
+  const bw = parseInt(document.getElementById('weekNum').value);
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById('wk' + i);
+    if (el) el.textContent = bw + i;
+  }
+}
+
+function updateWeekDates() {
+  const wn = parseInt(document.getElementById('weekNum').value);
+  const y = new Date().getFullYear();
+  const j4 = new Date(y, 0, 4);
+  const dow = j4.getDay() || 7;
+  const mw1 = new Date(j4);
+  mw1.setDate(j4.getDate() - dow + 1);
+  const mon = new Date(mw1);
+  mon.setDate(mw1.getDate() + (wn - 1) * 7);
+  const fri = new Date(mon);
+  fri.setDate(mon.getDate() + 4);
+  const fmt = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  document.getElementById('weekStart').value = fmt(mon);
+  document.getElementById('weekEnd').value = fmt(fri);
+}
+
+// ═══════════════════════════════════════
+//  KLASSE
+// ═══════════════════════════════════════
+function renderClassSelector() {
+  const container = document.getElementById('class-selector');
+  container.innerHTML = assignedClasses.map(cls => {
+    const active = cls.id === selectedClassId ? 'active' : '';
+    return `<button class="class-sel-btn ${active}" onclick="selectClass('${cls.id}')">${esc(cls.name)}</button>`;
+  }).join('');
+}
+
+async function selectClass(classId) {
+  selectedClassId = classId;
+  renderClassSelector();
+  await loadClassData();
+}
+
+async function loadClassData() {
+  subjects = await DataService.getSubjects(selectedClassId);
+  renderSubjectForms();
+  await loadWeekplan();
+  // Oppdater timeplan-visning hvis den er åpen
+  if (tpOpen) loadTpView();
+}
+
+// ═══════════════════════════════════════
+//  FAGSKJEMAER
+// ═══════════════════════════════════════
+function renderSubjectForms() {
+  const wrap = document.getElementById('subject-forms');
+  if (subjects.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><h3>Ingen fag</h3><p>Ingen fag er satt opp for denne klassen enda. Kontakt administrator.</p></div>';
+    return;
+  }
+
+  let html = '';
+  subjects.forEach((s, si) => {
+    const color = SUBJECT_COLORS[s.colorIdx] || SUBJECT_COLORS[0];
+    const gs = s.groups.map(g => g.name).join(', ');
+
+    html += `<div class="scard" id="sc-${si}">
+      <div class="scard-head" onclick="togSC(${si})" style="background:${color.bg}22">
+        <div class="scard-left">
+          <span class="stag" style="background:${color.bg};color:${color.fg}">${esc(s.name)}</span>
+          <span style="font-size:.82rem;color:var(--muted)">${gs}</span>
+        </div>
+        <span class="scard-chev">\u25be</span>
+      </div>
+      <div class="scard-body">
+        <div class="groups-grid">`;
+
+    s.groups.forEach((g, gi) => {
+      const gc = GROUP_COLORS[gi % GROUP_COLORS.length];
+      html += `<div class="group-col" style="background:${gc}0a">
+        <div class="gc-color-stripe" style="background:${gc}"></div>
+        <div class="gc-header">
+          <span class="gc-name" style="color:${gc}">${esc(g.name)}</span>
+          <span class="gc-teacher">${esc(g.teachers)}</span>
+        </div>
+        <div class="sfield">
+          <label class="slabel"><span class="slabel-icon">\ud83c\udfaf</span> Tema / m\u00e5l</label>
+          <textarea class="sinput" placeholder="Hva skal elevene l\u00e6re..." oninput="updGroup(${si},${gi},'tema',this.value)" id="tema-${si}-${gi}">${esc(g.tema || '')}</textarea>
+        </div>
+        <div class="sfield">
+          <label class="slabel"><span class="slabel-icon">\ud83d\udcd6</span> Lekse</label>
+          <textarea class="sinput hw-field" placeholder="Beskriv leksen..." oninput="updGroup(${si},${gi},'hw',this.value)" id="hw-${si}-${gi}">${esc(g.hw || '')}</textarea>
+        </div>
+        <div class="sfield sfield-frist">
+          <label class="slabel"><span class="slabel-icon">\ud83d\udcc5</span> Fristdag</label>
+          <select class="sinput" style="min-height:auto" onchange="updGroup(${si},${gi},'day',this.value)" id="day-${si}-${gi}">
+            <option value="">Ingen lekse</option>
+            ${DAYS.map(d => `<option value="${d}"${(g.day||'')=== d ? ' selected' : ''}>${d}</option>`).join('')}
+          </select>
+        </div>
+      </div>`;
+    });
+
+    html += `</div>
+      <div class="shared-row">
+        <div class="sfield">
+          <label class="slabel"><span class="slabel-icon">\ud83d\udce6</span> Utstyr (alle grupper)</label>
+          <input class="sinput" id="eq-${si}" value="${esc(s.equip || '')}" placeholder="F.eks. blyant, bok..." oninput="updEquip(${si},this.value)">
+        </div>
+      </div>
+    </div></div>`;
+  });
+
+  wrap.innerHTML = html;
+}
+
+function togSC(i) {
+  document.getElementById('sc-' + i).classList.toggle('open');
+}
+
+function updGroup(si, gi, field, value) {
+  if (!subjects[si].groups[gi].wpData) subjects[si].groups[gi].wpData = {};
+  subjects[si].groups[gi].wpData[field] = value;
+  debounceSave();
+}
+
+function updEquip(si, value) {
+  subjects[si].wpEquip = value;
+  debounceSave();
+}
+
+// ═══════════════════════════════════════
+//  LAGRE/LASTE UKEPLAN
+// ═══════════════════════════════════════
+let saveTimer;
+function debounceSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveWeekplan(), 800);
+}
+
+async function saveWeekplan() {
+  const weekNum = document.getElementById('weekNum').value;
+  const baseWeek = parseInt(weekNum);
+
+  // Samle kalenderdata med absolutte ukenummer
+  const calEntries = {};
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 5; c++) {
+      const el = document.getElementById('c' + r + c);
+      const absWeek = baseWeek + r;
+      calEntries[absWeek + '_' + c] = (el && el.value) ? el.value : null;
+    }
+  }
+
+  // Samle fagdata
+  const subjectData = {};
+  subjects.forEach((s, si) => {
+    const groups = {};
+    s.groups.forEach((g, gi) => {
+      const temaEl = document.getElementById('tema-' + si + '-' + gi);
+      const hwEl = document.getElementById('hw-' + si + '-' + gi);
+      const dayEl = document.getElementById('day-' + si + '-' + gi);
+      groups[gi] = {
+        tema: temaEl ? temaEl.value : '',
+        hw: hwEl ? hwEl.value : '',
+        day: dayEl ? dayEl.value : ''
+      };
+    });
+    const eqEl = document.getElementById('eq-' + si);
+    subjectData[si] = {
+      equip: eqEl ? eqEl.value : s.equip || '',
+      groups: groups
+    };
+  });
+
+  const data = {
+    weekStart: document.getElementById('weekStart').value,
+    weekEnd: document.getElementById('weekEnd').value,
+    infoText: document.getElementById('infoText').value,
+    subjects: subjectData,
+    lastSaved: new Date().toISOString()
+  };
+
+  try {
+    await Promise.all([
+      DataService.saveWeekplan(selectedClassId, weekNum, data),
+      DataService.saveCalendarEntries(selectedClassId, calEntries)
+    ]);
+    showToast('Ukeplan lagret');
+  } catch (err) {
+    console.error('Feil ved lagring:', err);
+    showToast('Feil ved lagring');
+  }
+}
+
+async function loadWeekplan() {
+  const weekNum = document.getElementById('weekNum').value;
+  const baseWeek = parseInt(weekNum);
+  try {
+    const [data, calData] = await Promise.all([
+      DataService.getWeekplan(selectedClassId, weekNum),
+      DataService.getCalendar(selectedClassId)
+    ]);
+
+    // Kalender fra separat lagring (absolutte ukenummer)
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 5; c++) {
+        const el = document.getElementById('c' + r + c);
+        const absWeek = baseWeek + r;
+        if (el) el.value = calData[absWeek + '_' + c] || '';
+      }
+    }
+    updateCalendarColors();
+
+    if (!data) {
+      // Tøm ikke-kalender-feltene
+      document.getElementById('infoText').value = '';
+      subjects.forEach((s, si) => {
+        s.groups.forEach((g, gi) => {
+          const t = document.getElementById('tema-' + si + '-' + gi);
+          const h = document.getElementById('hw-' + si + '-' + gi);
+          const d = document.getElementById('day-' + si + '-' + gi);
+          if (t) t.value = '';
+          if (h) h.value = '';
+          if (d) d.value = '';
+        });
+      });
+      return;
+    }
+
+    // Fyll inn data
+    if (data.weekStart) document.getElementById('weekStart').value = data.weekStart;
+    if (data.weekEnd) document.getElementById('weekEnd').value = data.weekEnd;
+    document.getElementById('infoText').value = data.infoText || '';
+
+    // Fag
+    if (data.subjects) {
+      subjects.forEach((s, si) => {
+        const sd = data.subjects[si];
+        if (!sd) return;
+        s.groups.forEach((g, gi) => {
+          const gd = sd.groups ? sd.groups[gi] : null;
+          if (!gd) return;
+          const t = document.getElementById('tema-' + si + '-' + gi);
+          const h = document.getElementById('hw-' + si + '-' + gi);
+          const d = document.getElementById('day-' + si + '-' + gi);
+          if (t) t.value = gd.tema || '';
+          if (h) h.value = gd.hw || '';
+          if (d) d.value = gd.day || '';
+        });
+        const eq = document.getElementById('eq-' + si);
+        if (eq && sd.equip) eq.value = sd.equip;
+      });
+    }
+  } catch (err) {
+    console.error('Feil ved lasting av ukeplan:', err);
+  }
+}
+
+// ═══════════════════════════════════════
+//  TIMEPLAN-VISNING
+// ═══════════════════════════════════════
+function toggleTimetableView() {
+  const toggle = document.getElementById('tp-toggle');
+  toggle.classList.toggle('open');
+  tpOpen = toggle.classList.contains('open');
+  if (tpOpen) {
+    loadTpView();
+  }
+}
+
+// Bakoverkompatibilitet: konverter gammelt slot-format til entries-array
+function slotEntries(slot) {
+  if (slot.entries) return slot.entries;
+  if (slot.subjectName) return [{ subjectName: slot.subjectName, teacher: slot.teacher || '' }];
+  return [];
+}
+
+async function loadTpView() {
+  const area = document.getElementById('tp-view-area');
+  if (!selectedClassId) {
+    area.innerHTML = '';
+    return;
+  }
+  try {
+    const rows = await DataService.getTimetable(selectedClassId);
+    if (!rows.length) {
+      area.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--muted);font-size:0.88rem;">Ingen timeplan for denne klassen.</div>';
+      return;
+    }
+    let html = '<table class="tp-table"><thead><tr>';
+    DAYS.forEach(d => { html += `<th>${d}</th>`; });
+    html += '</tr></thead><tbody>';
+    rows.forEach(row => {
+      html += '<tr>';
+      DAYS.forEach(day => {
+        const slot = (row.slots && row.slots[day]) || {};
+        const entries = slotEntries(slot);
+        const tf = slot.timeFrom || '';
+        const tt = slot.timeTo || '';
+        html += '<td>';
+        if (entries.length > 0 || tf) {
+          // Vis klokkeslett
+          if (tf) {
+            html += `<div class="tp-cell-time">${esc(tf)}${tt ? '\u2013' + esc(tt) : ''}</div>`;
+          }
+          // Vis hver entry som egen pille
+          entries.forEach(entry => {
+            if (!entry.subjectName) return;
+            const subj = subjects.find(s => s.name === entry.subjectName);
+            const color = subj ? (SUBJECT_COLORS[subj.colorIdx] || SUBJECT_COLORS[0]) : null;
+            const bgStyle = color ? `background:${color.bg};` : '';
+            const fgStyle = color ? `color:${color.fg};` : '';
+            html += `<div class="tp-cell" style="${bgStyle}margin-bottom:0.15rem;">`;
+            html += `<div class="tp-cell-subj" style="${fgStyle}">${esc(entry.subjectName)}</div>`;
+            if (entry.teacher) html += `<div class="tp-cell-teacher" style="${fgStyle}">${esc(entry.teacher)}</div>`;
+            html += '</div>';
+          });
+        }
+        html += '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    area.innerHTML = html;
+  } catch (e) {
+    console.error('Feil ved lasting av timeplan:', e);
+    area.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--muted);">Feil ved lasting av timeplan.</div>';
+  }
+}
+
+// ═══════════════════════════════════════
+//  KALENDER-FARGER
+// ═══════════════════════════════════════
+function getSubjectColorsForLines(text) {
+  if (!text || !text.trim()) return [];
+  const colors = [];
+  const seen = new Set();
+  text.split('\n').forEach(function(line) {
+    const lower = line.toLowerCase().trim();
+    if (!lower) return;
+    let best = null;
+    let bestLen = 0;
+    subjects.forEach(s => {
+      const sName = s.name.toLowerCase();
+      if (lower.includes(sName) && sName.length > bestLen) {
+        best = SUBJECT_COLORS[s.colorIdx] || SUBJECT_COLORS[0];
+        bestLen = sName.length;
+      }
+    });
+    if (best) {
+      const key = best.bg + best.fg;
+      if (!seen.has(key)) {
+        seen.add(key);
+        colors.push(best);
+      }
+    }
+  });
+  return colors;
+}
+
+function updateCellColor(el) {
+  const colors = getSubjectColorsForLines(el.value);
+  if (colors.length === 0) {
+    el.style.borderLeft = '';
+    el.style.borderImage = '';
+    el.style.background = '';
+  } else if (colors.length === 1) {
+    el.style.borderImage = '';
+    el.style.borderLeft = '3px solid ' + colors[0].fg;
+    el.style.background = colors[0].bg + '44';
+  } else {
+    const stops = colors.map(function(c, i) {
+      var p1 = (i / colors.length * 100).toFixed(0);
+      var p2 = ((i + 1) / colors.length * 100).toFixed(0);
+      return c.fg + ' ' + p1 + '%, ' + c.fg + ' ' + p2 + '%';
+    }).join(', ');
+    el.style.borderLeft = '3px solid';
+    el.style.borderImage = 'linear-gradient(to bottom, ' + stops + ') 1';
+    el.style.background = '';
+  }
+}
+
+function updateCalendarColors() {
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 5; c++) {
+      const el = document.getElementById('c' + r + c);
+      if (el) updateCellColor(el);
+    }
+  }
+}
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Init
+init();
+</script>
+</body>
+</html>
